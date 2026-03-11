@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>OpenCase · Рулетка</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap');
+
+    :root {
+      --gold:        #ffd966;
+      --gold-dark:   #c49a1a;
+      --gold-glow:   #f5c54290;
+      --bg-deep:     #0a0c10;
+      --bg-card:     #0f1215;
+      --bg-panel:    #0b0e12;
+      --surface:     #1a1f28;
+      --surface2:    #232a35;
+      --border:      #2e3540;
+      --text:        #e8edf4;
+      --text-muted:  #7a8a9c;
+      --common:      #7a8a9c;
+      --rare:        #2f80ed;
+      --epic:        #bb6bd9;
+      --legendary:   #f2c94c;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-card);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, #1e2a1a22, transparent),
+        radial-gradient(ellipse 60% 40% at 80% 110%, #1a1e2a33, transparent);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px;
+      font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+    }
+
+    /* ── APP SHELL ── */
+    .case-app {
+      max-width: 1100px; width: 100%;
+      background: rgba(14,17,22,0.97);
+      border: 1px solid rgba(255,215,0,0.12);
+      border-radius: 32px;
+      box-shadow: 0 30px 60px -15px rgba(0,0,0,0.8), 0 0 0 1px rgba(230,180,40,0.08) inset;
+      padding: 20px 20px 28px;
+      overflow: hidden;
+    }
+
+    /* ── TOP BAR ── */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 3px;
+      color: var(--gold);
+      text-shadow: 0 0 20px #ffd96660;
+    }
+    .reset-button {background: #333a45; border: 1px solid #5a6475; color: #ffd966; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; transition: all 0.2s; margin-left: 10px;}
+    .reset-button:hover { background: #404a58; transform: rotate(180deg);}
+    .balance-panel { display: flex; gap: 10px; flex-wrap: wrap; }
+    .balance-item {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-panel); border-radius: 50px;
+      padding: 7px 16px; border: 1px solid var(--border);
+      box-shadow: 0 4px 0 #05060788;
+    }
+    .balance-item .label {
+      color: var(--text-muted); font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+    }
+    .balance-item .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem; font-weight: 700;
+      color: #f0e6be; min-width: 60px; text-align: right;
+    }
+    .balance-item.player .value { color: #f0e6be; }
+    .balance-item.site   .value { color: #a0d4a0; }
+    .balance-item .value.bump   { animation: balanceBump 0.4s ease; }
+    @keyframes balanceBump {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.18); color: #ffe169; }
+      100% { transform: scale(1); }
+    }
+    .topup-btn {
+      background: transparent; border: 1px solid #3a5a3a;
+      color: #7ecf7e; padding: 7px 14px; border-radius: 50px;
+      font-family: 'Rajdhani', sans-serif; font-size: 0.85rem;
+      font-weight: 600; cursor: pointer; letter-spacing: 1px;
+      transition: all 0.15s;
+    }
+    .topup-btn:hover  { background: #7ecf7e22; border-color: #7ecf7e; }
+    .topup-btn:active { transform: scale(0.96); }
+
+    /* ── ROULETTE ── */
+    .roulette-outer { position: relative; margin: 0 0 18px; }
+
+    /* .win-zone-line {
+      position: absolute; top: 0; width: 3px; height: 100%;
+      background: linear-gradient(to bottom, transparent 0%, var(--gold) 30%, var(--gold) 70%, transparent 100%);
+      z-index: 22; pointer-events: none; opacity: 0.55;
+      filter: drop-shadow(0 0 6px var(--gold));
+    }
+    .win-zone-line.left  { left:  calc(50% - 60px); }
+    .win-zone-line.right { right: calc(50% - 50px); } */
+
+    .central-pointer {
+      position: absolute; top: -2px; left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 22px solid transparent;
+      border-right: 22px solid transparent;
+      border-top: 34px solid var(--gold);
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.9)) drop-shadow(0 0 10px var(--gold));
+      z-index: 30; pointer-events: none;
+    }
+
+    .roulette-wrapper {
+      position: relative; overflow: hidden;
+      border-radius: 20px; background: var(--bg-deep);
+      padding: 8px 0; height: 170px;
+      box-shadow: inset 0 4px 12px #00000099, inset 0 -2px 6px #1a1f2866, 0 0 0 1px #ffffff08;
+    }
+    .mask-left, .mask-right {
+      position: absolute; top: 0; width: 160px; height: 100%;
+      z-index: 20; pointer-events: none;
+    }
+    .mask-left  { left:  0; background: linear-gradient(to right, #0a0c10 20%, transparent); }
+    .mask-right { right: 0; background: linear-gradient(to left,  #0a0c10 20%, transparent); }
+
+    .items-strip { display: flex; gap: 10px; padding: 12px 0; height: 100%; will-change: transform; align-items: stretch; }
+
+    /* ── ITEM CARD ── */
+    .item-card {
+      flex: 0 0 auto; width: 100px;
+      background: var(--surface); border-radius: 16px;
+      padding: 16px 6px 14px; text-align: center;
+      border: 2px solid transparent;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text); position: relative; opacity: 0.85;
+      box-shadow: 0 8px 0 #0a0c1088;
+      transition: opacity 0.2s;
+    }
+    .item-card:hover { opacity: 1; }
+    .item-card.common    { border-color: #4a5a6c; background: #1e2530; }
+    .item-card.rare      { border-color: #1f5fa8; background: #0f2a45; }
+    .item-card.epic      { border-color: #8a4aaa; background: #2a1540; }
+    .item-card.legendary { border-color: #c4982a; background: #3a2a0c; }
+    .item-card.win-highlight {
+      outline: 4px solid var(--gold); outline-offset: 3px;
+      filter: brightness(1.25) drop-shadow(0 0 18px var(--gold));
+      z-index: 100; opacity: 1;
+    }
+
+    /* Лента: только иконка */
+    .item-icon { font-size: 3rem; line-height: 1; filter: drop-shadow(1px 4px 6px black); }
+
+    /* ── ПУУЛ КЕЙСА ── */
+    .case-pool {
+      margin: 0 0 20px;
+    }
+    .pool-title {
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); font-weight: 700; margin-bottom: 12px;
+    }
+    .pool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+    }
+    .pool-card {
+      background: var(--surface); border-radius: 16px;
+      border: 2px solid transparent;
+      padding: 14px 10px 12px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; text-align: center; position: relative;
+      transition: transform 0.15s, opacity 0.2s;
+      cursor: default;
+    }
+    .pool-card:hover { transform: translateY(-3px); }
+    .pool-card.common    { border-color: #4a5a6c; background: #1e2530; }
+    .pool-card.rare      { border-color: #1f5fa8; background: #0f2a45; }
+    .pool-card.epic      { border-color: #8a4aaa; background: #2a1540; }
+    .pool-card.legendary { border-color: #c4982a; background: #3a2a0c;
+      box-shadow: 0 0 18px #f2c94c18; }
+    .pool-card.blocked   { opacity: 0.35; filter: grayscale(0.7); }
+
+    .pool-card-badge {
+      position: absolute; top: 7px; left: 8px;
+      font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px;
+      padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+    }
+    .pool-card-lock {
+      position: absolute; top: 7px; right: 8px;
+      font-size: 0.7rem; opacity: 0.5;
+    }
+    .common    .pool-card-badge { background: #2a3540; color: #7a8a9c; }
+    .rare      .pool-card-badge { background: #0f2540; color: #5aaaf2; }
+    .epic      .pool-card-badge { background: #250f40; color: #cc88ee; }
+    .legendary .pool-card-badge { background: #3a2500; color: #f2c94c; }
+
+    .pool-card-icon  { font-size: 2.6rem; line-height: 1; filter: drop-shadow(1px 4px 5px black); }
+    .pool-card-name  { font-size: 0.72rem; font-weight: 600; color: var(--text);
+                       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+    .pool-card-price { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
+                       font-weight: 700; color: #f5d77c; }
+    .pool-card-chance { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.5px; }
+
+    /* ── ACTION AREA ── */
+    .action-row {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px; margin-top: 14px;
+    }
+    .spin-button {
+      background: linear-gradient(150deg, #f7dc55, #d4a020);
+      border: 2px solid #ffe080; color: #1a1505;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.9rem; letter-spacing: 4px;
+      padding: 14px 64px; border-radius: 100px;
+      box-shadow: 0 12px 0 #7a5010, 0 8px 30px var(--gold-glow);
+      cursor: pointer; transition: 0.08s linear;
+      outline: none; position: relative; overflow: hidden;
+    }
+    .spin-button::after {
+      content: ''; position: absolute;
+      top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+      transform: skewX(-20deg); transition: left 0.6s ease;
+    }
+    .spin-button:hover::after  { left: 160%; }
+    .spin-button:active        { transform: translateY(10px); box-shadow: 0 2px 0 #7a5010, 0 5px 20px var(--gold-glow); }
+    .spin-button:disabled      { opacity: 0.45; transform: translateY(6px); box-shadow: 0 4px 0 #5a3e0e; pointer-events: none; filter: grayscale(0.6); }
+    .spin-button.broke         { background: linear-gradient(150deg, #444, #2a2a2a); border-color: #555; color: #888; box-shadow: 0 6px 0 #1a1a1a; }
+
+    .spin-cost-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem; color: var(--text-muted); letter-spacing: 1px; margin-top: -4px;
+    }
+
+    /* ── RESULT ── */
+    .result-window {
+      background: #00000070; border-radius: 60px;
+      padding: 14px 36px; border: 1.5px solid #ffd96680;
+      color: #ffeaac; font-size: 1.5rem; font-weight: 600;
+      backdrop-filter: blur(12px); text-align: center;
+      max-width: 100%; width: fit-content; box-sizing: border-box;
+      box-shadow: 0 8px 20px #00000060;
+      font-family: 'Rajdhani', sans-serif; transition: border-color 0.3s;
+    }
+    .result-window span        { color: #ffe169; font-weight: 800; text-shadow: 0 0 12px #ffa500; }
+    .result-window.legendary-win { border-color: #f2c94c; box-shadow: 0 0 30px #f2c94c55; }
+
+    /* ── BOTTOM PANELS ── */
+    .bottom-row { display: flex; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
+
+    .history-panel {
+      flex: 1 1 300px; background: var(--bg-panel);
+      border-radius: 16px; padding: 12px 14px; border: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); font-weight: 700; margin-bottom: 10px;
+    }
+    .history-list { display: flex; gap: 8px; flex-wrap: wrap; }
+    .history-chip {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--surface2); border-radius: 30px;
+      padding: 4px 10px; font-size: 0.8rem; font-weight: 600;
+      border: 1px solid transparent; white-space: nowrap;
+      animation: chipIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes chipIn {
+      from { opacity: 0; transform: scale(0.6) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .history-chip.common    { border-color: #3a4a5c; color: #8a9aac; }
+    .history-chip.rare      { border-color: #1f5fa860; color: #6aaaf2; }
+    .history-chip.epic      { border-color: #8a4aaa60; color: #cc88ee; }
+    .history-chip.legendary { border-color: #c4982a80; color: #f2c94c; box-shadow: 0 0 8px #f2c94c22; }
+    .history-empty { color: var(--text-muted); font-size: 0.82rem; font-style: italic; }
+
+    .odds-panel {
+      flex: 0 1 220px; background: var(--bg-panel);
+      border-radius: 16px; padding: 12px 14px; border: 1px solid var(--border);
+    }
+    .odds-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0; border-bottom: 1px solid #1e2530; font-size: 0.82rem;
+    }
+    .odds-row:last-child { border-bottom: none; }
+    .odds-dot  { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
+    .odds-name { display: flex; align-items: center; color: var(--text); flex: 1; }
+    .odds-pct  { font-family: 'JetBrains Mono', monospace; color: var(--text-muted); font-size: 0.78rem; }
+
+    /* ── CONFETTI ── */
+    .confetti-container {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 9999; overflow: hidden;
+    }
+    .confetto {
+      position: absolute; top: -20px;
+      width: 8px; height: 8px; border-radius: 2px;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg) scale(0.5); opacity: 0; }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 680px) {
+      .case-app       { padding: 14px; border-radius: 22px; }
+      .top-bar        { flex-direction: column; align-items: stretch; }
+      .balance-panel  { justify-content: center; }
+      .item-card      { width: 88px; }
+      .item-icon      { font-size: 2.3rem; }
+      .spin-button    { font-size: 1.6rem; padding: 12px 44px; letter-spacing: 3px; }
+      .mask-left, .mask-right { width: 70px; }
+      .result-window  { font-size: 1.2rem; padding: 12px 20px; min-width: 0; width: 96%; }
+      .bottom-row     { flex-direction: column; }
+      .odds-panel     { flex: 1 1 auto; }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+<div class="confetti-container" id="confettiContainer"></div>
+
+<div class="case-app">
+  <div class="top-bar">
+    <div class="logo">🎰 OpenCase</div>
+    <button id="resetBtn" class="reset-button" title="Сбросить прогресс">🔄</button>
+    <div class="balance-panel">
+      <div class="balance-item player">
+        <span class="label">👤 Игрок</span>
+        <span class="value" id="playerBalance">0</span>
+        <span style="color:#7a8a9c;font-size:.9rem">₽</span>
+      </div>
+      <div class="balance-item site">
+        <span class="label">🏦 Сайт</span>
+        <span class="value" id="siteBalance">0</span>
+        <span style="color:#7a8a9c;font-size:.9rem">₽</span>
+      </div>
+      <button class="topup-btn" id="topupBtn">+ <span id="topupLabel">500</span>₽</button>
+    </div>
+  </div>
+
+  <div class="roulette-outer">
+    <!-- <div class="win-zone-line left"></div>
+    <div class="win-zone-line right"></div> -->
+    <div class="central-pointer"></div>
+    <div class="roulette-wrapper">
+      <div class="mask-left"></div>
+      <div class="mask-right"></div>
+      <div class="items-strip" id="itemsStrip"></div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="spin-button" id="spinBtn">КРУТИТЬ</button>
+    <div class="spin-cost-label">
+      стоимость спина: <span style="color:#f5d77c" id="costLabel">0₽</span>
+    </div>
+    <div class="result-window" id="resultDisplay">⚡ ЖМИ НА КНОПКУ</div>
+  </div>
+
+  <div class="case-pool">
+    <div class="pool-title">📦 Содержимое кейса</div>
+    <div class="pool-grid" id="poolGrid"></div>
+  </div>
+
+  <div class="bottom-row">
+    <div class="history-panel">
+      <div class="panel-title">🕘 История выигрышей</div>
+      <div class="history-list" id="historyList">
+        <span class="history-empty">Пока ничего...</span>
+      </div>
+    </div>
+    <div class="odds-panel">
+      <div class="panel-title">📊 Шансы</div>
+      <div id="oddsList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  /* ============================================================
+     ВСЕ НАСТРОЙКИ ИГРЫ — ТОЛЬКО ЗДЕСЬ
+     Меняй параметры, предметы, экономику — всё в этом блоке
+  ============================================================ */
+
+  const CONFIG = {
+    // ───────────────────── ЭКОНОМИКА ─────────────────────────
+    // Балансы и стоимость игры
+    SPIN_COST:        50,     // 💰 стоимость одного спина (₽) - от 10 до 100
+    START_BALANCE:    1000,   // 👤 начальный баланс игрока (₽)
+    SITE_BALANCE:     1500,   // 🏦 начальный баланс сайта (₽) - защита от банкротства
+    TOPUP_AMOUNT:     500,    // 💳 сколько даёт кнопка пополнения (₽)
+
+    // ───────────────────── ШАНСЫ ПО РЕДКОСТИ ─────────────────
+    // Сумма должна быть 100% - распределение выпадения предметов
+    RARITY_WEIGHT: {
+      common:    55,   // 🟫 обычные: 55% (должно быть ~50-60%)
+      rare:      25,   // 🔵 редкие: 25% (~20-25%)
+      epic:      12,   // 🟣 эпические: 12% (~10-15%)
+      legendary:  8,   // 🟡 легендарные: 8% (~5-8% для интереса)
+    },                  // ИТОГО: 100%
+
+    // ───────────────────── АНИМАЦИЯ ──────────────────────────
+    // Параметры вращения ленты
+    SPIN_DURATION:    7.5,    // ⏱️ общая длительность спина (секунды) - 5-8 сек
+    SPIN_EASE_START: 'power2.inOut', // ▶️ стартовая фаза (разгон)
+    SPIN_EASE_END:   'power3.out',   // ⏹️ финальная фаза (торможение)
+    SWAP_DELAY:       600,    // 🔄 мс до подмены ленты (должно быть < SPIN_DURATION*1000)
+    MIN_SPINS:        7,      // 🔄 минимум полных оборотов
+    EXTRA_SPINS:      3,      // 🎲 случайный добавок к оборотам (0..N-1)
+
+    // ───────────────────── ЛЕНТА ПРЕДМЕТОВ ───────────────────
+    STRIP_COPIES:     8,      // 📼 сколько раз дублируется набор предметов (6-10)
+    ITEMS_PER_COPY:   3,      // 📦 сколько копий каждого предмета в одном сегменте (2-4)
+
+    // ───────────────────── ИСТОРИЯ ───────────────────────────
+    MAX_HISTORY:      18,     // 📜 максимум записей в истории выигрышей
+
+    // ───────────── ДИНАМИЧЕСКИЙ RTP (ЗАЩИТА БАЛАНСА) ─────────
+    // При низком балансе сайта шансы дорогих редкостей снижаются
+    // Множитель 1.0 = полный шанс, 0.0 = не выпадает никогда
+    // Пороги проверяются сверху вниз — первый подходящий применяется
+    RTP_TIERS: [
+      { minBalance: 2000, weights: { common:1.00, rare:1.00, epic:1.00, legendary:1.00 } }, // богатый
+      { minBalance: 1200, weights: { common:1.00, rare:1.00, epic:0.85, legendary:0.60 } }, // средний+
+      { minBalance:  800, weights: { common:1.00, rare:0.90, epic:0.50, legendary:0.20 } }, // средний
+      { minBalance:  300, weights: { common:1.00, rare:0.60, epic:0.15, legendary:0.02 } }, // бедный
+      { minBalance:    0, weights: { common:1.00, rare:0.30, epic:0.01, legendary:0.00 } }, // критический
+    ],
+
+    // ───────────── ЖЁСТКИЙ КАП ВЫПЛАТЫ (ЗАЩИТА) ──────────────
+    // Предметы дороже (баланс сайта × MAX_PAYOUT_RATIO) исключаются из пула
+    // Например: баланс 100₽ × 0.8 = макс выигрыш 80₽
+    // Если ВСЕ предметы дороже — выдаётся самый дешёвый доступный
+    MAX_PAYOUT_RATIO: 0.9,    // 🛡️ защита от банкротства
+  };
+
+  /* ============================================================
+     ПРЕДМЕТЫ КЕЙСА
+     Добавляй/удаляй/редактируй предметы здесь.
+     id        — уникальный идентификатор (c1,c2,r1,l1...)
+     name      — название предмета
+     price     — стоимость выигрыша (₽)
+     rarity    — 'common' | 'rare' | 'epic' | 'legendary'
+     icon      — эмодзи (1-2 символа)
+  ============================================================ */
+
+  const ITEMS = [
+    // ========== COMMON (Обычные) - бытовые мелочи ==========
+    { id: 'c1', name: 'Грязный носок', price: 3, rarity: 'common', icon: '🧦' },
+    { id: 'c2', name: 'Жвачка из-под парты', price: 5, rarity: 'common', icon: '🫧' },
+    { id: 'c3', name: 'Сломанная зажигалка', price: 7, rarity: 'common', icon: '🔥' },
+    { id: 'c4', name: 'Ржавый гвоздь', price: 4, rarity: 'common', icon: '📌' },
+    { id: 'c5', name: 'Пустая банка колы', price: 6, rarity: 'common', icon: '🥤' },
+    { id: 'c6', name: 'Чей-то выпавший зуб', price: 8, rarity: 'common', icon: '🦷' },
+    { id: 'c7', name: 'Сломанные наушники', price: 12, rarity: 'common', icon: '🎧' },
+    { id: 'c8', name: 'Окурок "Беломор"', price: 2, rarity: 'common', icon: '🚬' },
+    { id: 'c9', name: 'Просроченный йогурт', price: 9, rarity: 'common', icon: '🥛' },
+    { id: 'c10', name: 'Рваный презерватив', price: 11, rarity: 'common', icon: '🔞' },
+    { id: 'c11', name: 'Грязный шприц', price: 7, rarity: 'common', icon: '💉' },
+    { id: 'c12', name: 'Сломанные очки', price: 15, rarity: 'common', icon: '👓' },
+    { id: 'c13', name: 'Клок шерсти кота', price: 4, rarity: 'common', icon: '🐱' },
+    { id: 'c14', name: 'Чешуя дракона', price: 10, rarity: 'common', icon: '🐉' },
+    { id: 'c15', name: 'Сухая козявка', price: 1, rarity: 'common', icon: '👃' },
+    { id: 'c16', name: 'Билет на маршрутку', price: 6, rarity: 'common', icon: '🎫' },
+    { id: 'c17', name: 'Ржавый ключ', price: 8, rarity: 'common', icon: '🗝️' },
+    { id: 'c18', name: 'Сдутый шарик', price: 5, rarity: 'common', icon: '🎈' },
+    { id: 'c19', name: 'Сломанные часы', price: 14, rarity: 'common', icon: '⌚' },
+    { id: 'c20', name: 'Мокрая сигарета', price: 3, rarity: 'common', icon: '🚬' },
+
+    // ========== RARE (Редкие) - полезные или странные вещи ==========
+    { id: 'r1', name: 'Рабочая зажигалка Zippo', price: 45, rarity: 'rare', icon: '🔥' },
+    { id: 'r2', name: 'Золотая монета', price: 65, rarity: 'rare', icon: '🪙' },
+    { id: 'r3', name: 'Череп крысы', price: 35, rarity: 'rare', icon: '🐀' },
+    { id: 'r4', name: 'Глазное яблоко в банке', price: 55, rarity: 'rare', icon: '👁️' },
+    { id: 'r5', name: 'Сломанный айфон', price: 85, rarity: 'rare', icon: '📱' },
+    { id: 'r6', name: 'Палец мумии', price: 40, rarity: 'rare', icon: '🖕' },
+    { id: 'r7', name: 'Странная таблетка', price: 25, rarity: 'rare', icon: '💊' },
+    { id: 'r8', name: 'Билет в один конец', price: 30, rarity: 'rare', icon: '✈️' },
+    { id: 'r9', name: 'Волшебная фасоль', price: 48, rarity: 'rare', icon: '🫘' },
+    { id: 'r10', name: 'Чешуя русалки', price: 60, rarity: 'rare', icon: '🧜‍♀️' },
+    { id: 'r11', name: 'Зуб вампира', price: 70, rarity: 'rare', icon: '🧛' },
+    { id: 'r12', name: 'Перо Жар-птицы', price: 90, rarity: 'rare', icon: '🪶' },
+    { id: 'r13', name: 'Коготь оборотня', price: 55, rarity: 'rare', icon: '🐺' },
+    { id: 'r14', name: 'Слеза единорога', price: 80, rarity: 'rare', icon: '🦄' },
+
+    // ========== EPIC (Эпические) - магические/мистические предметы ==========
+    { id: 'e1', name: 'Хрустальный череп', price: 150, rarity: 'epic', icon: '💀' },
+    { id: 'e2', name: 'Говорящее зеркало', price: 190, rarity: 'epic', icon: '🪞' },
+    { id: 'e3', name: 'Лампа с джинном', price: 240, rarity: 'epic', icon: '🪔' },
+    { id: 'e4', name: 'Ковер-самолет', price: 210, rarity: 'epic', icon: '🧞' },
+    { id: 'e5', name: 'Сапоги-скороходы', price: 170, rarity: 'epic', icon: '👢' },
+    { id: 'e6', name: 'Шапка-невидимка', price: 220, rarity: 'epic', icon: '🧢' },
+    { id: 'e7', name: 'Золотая удочка', price: 140, rarity: 'epic', icon: '🎣' },
+    { id: 'e8', name: 'Магический кристалл', price: 260, rarity: 'epic', icon: '🔮' },
+    { id: 'e9', name: 'Книга заклинаний', price: 200, rarity: 'epic', icon: '📖' },
+    { id: 'e10', name: 'Зелье бессмертия', price: 280, rarity: 'epic', icon: '🧪' },
+
+    // ========== LEGENDARY (Легендарные) - артефакты и божественные предметы ==========
+    { id: 'l1', name: 'Посох Всевластия', price: 450, rarity: 'legendary', icon: '🪄' },
+    { id: 'l2', name: 'Корона Короля Ночи', price: 650, rarity: 'legendary', icon: '👑' },
+    { id: 'l3', name: 'Молот Тора', price: 800, rarity: 'legendary', icon: '🔨' },
+    { id: 'l4', name: 'Яйцо дракона', price: 550, rarity: 'legendary', icon: '🥚' },
+    { id: 'l5', name: 'Душа дьявола', price: 950, rarity: 'legendary', icon: '😈' },
+    { id: 'l6', name: 'Копье судьбы', price: 720, rarity: 'legendary', icon: '🗡️' },
+    { id: 'l7', name: 'Глаз Саурона', price: 880, rarity: 'legendary', icon: '👁️' },
+    { id: 'l8', name: 'Чаша Грааля', price: 990, rarity: 'legendary', icon: '🏆' },
+  ];
+
+  /* ============================================================
+     КОНСТАНТЫ РЕДКОСТЕЙ (для UI и звуков)
+     Не менять без нужды — только если хочешь изменить названия
+  ============================================================ */
+
+  const RARITY_SHORT = { common:'CMN', rare:'RARE', epic:'EPIC', legendary:'LEG' };
+  const RARITY_LABEL = { common:'Common', rare:'Rare', epic:'Epic', legendary:'Legendary' };
+  const RARITY_COLOR = { common:'#7a8a9c', rare:'#2f80ed', epic:'#bb6bd9', legendary:'#f2c94c' };
+  
+  // Вибрация при выигрыше (массивы длительности в мс)
+  const RARITY_VIBRATE = {
+    common:    [60],
+    rare:      [80],
+    epic:      [80, 30, 80],
+    legendary: [100, 50, 200],
+  };
+  
+  // Звуки выигрыша (частоты в Hz)
+  const WIN_SOUNDS = {
+    legendary: [523, 659, 784, 1047], // до-ми-соль-до
+    epic:      [440, 554, 659],       // ля-до#-ми
+    rare:      [392, 494],            // соль-си
+    common:    [330],                  // ми
+  };
+
+  /* ============================================================
+     СОСТОЯНИЕ ИГРЫ
+     Внутренние переменные — не трогать!
+  ============================================================ */
+
+  let playerBalance  = CONFIG.START_BALANCE;
+  let siteBalance    = CONFIG.SITE_BALANCE;
+  let isSpinning     = false;
+  let currentAnim    = null;
+  let stripItems     = [];
+  let itemWidth      = 0;
+  let winHistory     = [];
+  let audioCtx       = null;
+  let tickTimer      = null;
+
+  /* ============================================================
+     DOM ЭЛЕМЕНТЫ
+     Связь с HTML — не трогать!
+  ============================================================ */
+
+  const $ = id => document.getElementById(id);
+  const itemsStrip   = $('itemsStrip');
+  const playerSpan   = $('playerBalance');
+  const siteSpan     = $('siteBalance');
+  const spinBtn      = $('spinBtn');
+  const resultDiv    = $('resultDisplay');
+  const historyList  = $('historyList');
+  const oddsList     = $('oddsList');
+  const topupBtn     = $('topupBtn');
+  const topupLabel   = $('topupLabel');
+  const costLabel    = $('costLabel');
+  const confettiCont = $('confettiContainer');
+  const resetBtn     = $('resetBtn');
+
+  /* ============================================================
+     ФУНКЦИИ (расположены в логическом порядке)
+     Далее идут все функции игры
+  ============================================================ */
+
+  // ========== АУДИО ==========
+  function getAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function startTicks(totalDuration) {
+    let elapsed = 0;
+    let interval = 80;
+    function tick() {
+      playTick(0.15);
+      const progress = Math.min(elapsed / totalDuration, 1);
+      interval = 80 + progress * progress * 520;
+      elapsed += interval;
+      tickTimer = setTimeout(tick, interval);
+    }
+    tickTimer = setTimeout(tick, 0);
+  }
+
+  function stopTicks() {
+    if (tickTimer) { clearTimeout(tickTimer); tickTimer = null; }
+  }
+
+  function playTick(volume = 0.15) {
+    try {
+      const ctx = getAudio();
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(880 + Math.random() * 200, ctx.currentTime);
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.07);
+    } catch(e) {}
+  }
+
+  function playWinSound(rarity) {
+    try {
+      const ctx   = getAudio();
+      const freqs = WIN_SOUNDS[rarity] || WIN_SOUNDS.common;
+      freqs.forEach((freq, i) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        const t = ctx.currentTime + i * 0.12;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.3, t + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        osc.start(t); osc.stop(t + 0.55);
+      });
+    } catch(e) {}
+  }
+
+  // ========== КОНФЕТТИ ==========
+  function launchConfetti(amount = 60) {
+    const colors = ['#ffd966','#ff6b6b','#6bcfff','#b8ff6b','#ff9ef0','#ffe0a0'];
+    for (let i = 0; i < amount; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetto';
+      el.style.cssText = [
+        `left:${Math.random() * 100}%`,
+        `background:${colors[Math.floor(Math.random() * colors.length)]}`,
+        `width:${6 + Math.random() * 8}px`,
+        `height:${6 + Math.random() * 8}px`,
+        `border-radius:${Math.random() > 0.5 ? '50%' : '2px'}`,
+        `animation-duration:${1.5 + Math.random() * 2}s`,
+        `animation-delay:${Math.random() * 0.5}s`,
+      ].join(';');
+      confettiCont.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+  }
+
+  // ========== БАЛАНС ==========
+  function animateCounter(el, from, to, duration = 600) {
+    const start = performance.now();
+    const diff  = to - from;
+    (function step(now) {
+      const t = Math.min((now - start) / duration, 1);
+      el.textContent = Math.round(from + diff * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) requestAnimationFrame(step);
+      else el.textContent = to;
+    })(performance.now());
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function updateBalances(animated = false) {
+    if (animated) {
+      animateCounter(playerSpan, parseInt(playerSpan.textContent) || 0, playerBalance);
+      animateCounter(siteSpan,   parseInt(siteSpan.textContent)   || 0, siteBalance);
+    } else {
+      playerSpan.textContent = playerBalance;
+      siteSpan.textContent   = siteBalance;
+    }
+    spinBtn.classList.toggle('broke', playerBalance < CONFIG.SPIN_COST);
+  }
+
+  // ========== ИСТОРИЯ ==========
+  function addHistory(item) {
+    winHistory.unshift(item);
+    if (winHistory.length > CONFIG.MAX_HISTORY) winHistory.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    historyList.innerHTML = winHistory.length
+      ? winHistory.map(it =>
+          `<div class="history-chip ${it.rarity}">${it.icon} <span>${it.price}₽</span></div>`
+        ).join('')
+      : '<span class="history-empty">Пока ничего...</span>';
+  }
+
+  // ========== ЛЕНТА (ПОСТРОЕНИЕ) ==========
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildStrip() {
+    const result = [];
+    for (let copy = 0; copy < CONFIG.STRIP_COPIES; copy++) {
+      const segment = shuffle(
+        Array.from({ length: CONFIG.ITEMS_PER_COPY }, () => ITEMS).flat()
+      );
+      segment.forEach((item, idx) => {
+        result.push({
+          ...item,
+          uid: `${copy}-${idx}-${Math.random().toString(36).substr(2, 6)}`,
+        });
+      });
+    }
+    return result;
+  }
+
+  function cardHTML(item) {
+    return `<div class="item-card ${item.rarity}" data-uid="${item.uid}">
+      <div class="item-icon">${item.icon}</div>
+    </div>`;
+  }
+
+  function renderStrip() {
+    itemsStrip.innerHTML = stripItems.map(cardHTML).join('');
+    return new Promise(resolve => setTimeout(() => {
+      const card = itemsStrip.querySelector('.item-card');
+      if (card) itemWidth = card.offsetWidth + 10;
+      centerStrip();
+      resolve();
+    }, 60));
+  }
+
+  function swapStrip() {
+    const liveX = parseFloat(gsap.getProperty(itemsStrip, 'x'));
+    stripItems = buildStrip();
+    itemsStrip.innerHTML = stripItems.map(cardHTML).join('');
+    gsap.set(itemsStrip, { x: liveX });
+  }
+
+  function centerStrip() {
+    if (!itemWidth) return;
+    const cw = itemsStrip.parentElement.offsetWidth;
+    gsap.set(itemsStrip, { x: -(Math.floor(stripItems.length / 2) * itemWidth - (cw / 2 - itemWidth / 2)) });
+  }
+
+  function findCards(itemId) {
+    return Array.from(itemsStrip.children).filter(card => {
+      const it = stripItems.find(s => s.uid === card.dataset.uid);
+      return it && it.id === itemId;
+    });
+  }
+
+  // ========== РАСЧЁТ ШАНСОВ ==========
+  function getMaxPayout() {
+    return Math.max(siteBalance * CONFIG.MAX_PAYOUT_RATIO, 0);
+  }
+
+  function getRtpMultipliers() {
+    const tiers = CONFIG.RTP_TIERS;
+    for (const tier of tiers) {
+      if (siteBalance >= tier.minBalance) return tier.weights;
+    }
+    return tiers[tiers.length - 1].weights;
+  }
+
+  function getPrize() {
+    const maxPayout      = getMaxPayout();
+    const mult           = getRtpMultipliers();
+    const countByRarity  = ITEMS.reduce((acc, it) => {
+      acc[it.rarity] = (acc[it.rarity] || 0) + 1;
+      return acc;
+    }, {});
+
+    let affordable = ITEMS.filter(item => item.price <= maxPayout);
+
+    if (affordable.length === 0) {
+      affordable = [ITEMS.reduce((min, it) => it.price < min.price ? it : min, ITEMS[0])];
+    }
+
+    const pool  = affordable.map(item => ({
+      item,
+      weight: (CONFIG.RARITY_WEIGHT[item.rarity] * mult[item.rarity]) / countByRarity[item.rarity],
+    }));
+    const total = pool.reduce((s, w) => s + w.weight, 0);
+
+    let r = Math.random() * total;
+    for (const { item, weight } of pool) {
+      r -= weight;
+      if (r <= 0) return item;
+    }
+    return pool[pool.length - 1].item;
+  }
+
+  // ========== ОТОБРАЖЕНИЕ ШАНСОВ ==========
+  function renderOdds() {
+    const maxPayout     = getMaxPayout();
+    const mult          = getRtpMultipliers();
+    const countByRarity = ITEMS.reduce((acc, it) => {
+      acc[it.rarity] = (acc[it.rarity] || 0) + 1;
+      return acc;
+    }, {});
+
+    const rawByRarity = {};
+    ITEMS.forEach(item => {
+      if (item.price > maxPayout) return;
+      const w = (CONFIG.RARITY_WEIGHT[item.rarity] * mult[item.rarity]) / countByRarity[item.rarity];
+      rawByRarity[item.rarity] = (rawByRarity[item.rarity] || 0) + w;
+    });
+
+    const total = Object.values(rawByRarity).reduce((s, v) => s + v, 0);
+
+    oddsList.innerHTML = Object.keys(CONFIG.RARITY_WEIGHT).map(rarity => {
+      const w         = rawByRarity[rarity] || 0;
+      const pct       = total > 0 ? (w / total * 100) : 0;
+      const blocked   = w === 0;
+      const dimmed    = !blocked && mult[rarity] < 1.0;
+      const color     = blocked ? '#333' : dimmed ? '#e07030' : RARITY_COLOR[rarity];
+      const pctText   = blocked ? '🔒' : pct < 0.1 ? '—' : pct.toFixed(1) + '%';
+      const pctColor  = blocked ? '#333' : dimmed ? '#e07030' : '';
+      const suffix    = blocked ? ' <span style="color:#555;font-size:.7rem">недост.</span>'
+                      : dimmed  ? ' <span style="color:#e07030;font-size:.7rem">↓</span>'
+                      : '';
+      return `<div class="odds-row">
+        <span class="odds-name">
+          <span class="odds-dot" style="background:${color}"></span>
+          ${RARITY_LABEL[rarity]}${suffix}
+        </span>
+        <span class="odds-pct" style="color:${pctColor}">${pctText}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ========== ОТОБРАЖЕНИЕ ПУЛА ==========
+  function renderPool() {
+    const maxPayout = getMaxPayout();
+    const mult      = getRtpMultipliers();
+    const countByRarity = ITEMS.reduce((acc, it) => {
+      acc[it.rarity] = (acc[it.rarity] || 0) + 1;
+      return acc;
+    }, {});
+
+    const pool = ITEMS.map(item => {
+      const isBlocked = item.price > maxPayout;
+      const w = isBlocked ? 0
+        : (CONFIG.RARITY_WEIGHT[item.rarity] * mult[item.rarity]) / countByRarity[item.rarity];
+      return { item, w, isBlocked };
+    });
+    const totalW = pool.reduce((s, p) => s + p.w, 0);
+
+    const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
+    const sorted = [...pool].sort((a, b) =>
+      rarityOrder[a.item.rarity] - rarityOrder[b.item.rarity] ||
+      a.item.price - b.item.price
+    );
+
+    const poolGrid = document.getElementById('poolGrid');
+    const sortedByPrice = [...sorted].sort((a, b) => b.item.price - a.item.price);
+
+    poolGrid.innerHTML = sortedByPrice.map(({ item, w, isBlocked }) => {
+      const pct     = totalW > 0 ? (w / totalW * 100) : 0;
+      const pctText = isBlocked ? '🔒 Недоступен'
+                    : pct < 0.05 ? '< 0.1%'
+                    : pct.toFixed(1) + '%';
+      const pctColor = isBlocked ? '#444'
+                    : mult[item.rarity] < 1.0 ? '#e07030' : '#7a8a9c';
+      return `<div class="pool-card ${item.rarity}${isBlocked ? ' blocked' : ''}">
+        <div class="pool-card-badge">${RARITY_LABEL[item.rarity]}</div>
+        ${isBlocked ? '<div class="pool-card-lock">🔒</div>' : ''}
+        <div class="pool-card-icon">${item.icon}</div>
+        <div class="pool-card-name">${item.name}</div>
+        <div class="pool-card-price">${item.price}₽</div>
+        <div class="pool-card-chance" style="color:${pctColor}">${pctText}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ========== ОЧИСТКА ХРАНИЛИЩА (ИСПРАВЛЕНО) ==========
+  function resetStorage() {
+    // Очищаем localStorage
+    localStorage.removeItem('opencase_state');
+    
+    // Сбрасываем балансы к начальным значениям
+    playerBalance = CONFIG.START_BALANCE;
+    siteBalance = CONFIG.SITE_BALANCE;
+    
+    // Обновляем UI
+    updateBalances(true);
+    
+    // Перестраиваем ленту заново
+    stripItems = buildStrip();
+    renderStrip().then(() => {
+      renderOdds();
+      renderPool();
+    });
+    
+    // Очищаем историю выигрышей
+    winHistory = [];
+    renderHistory();
+    
+    // Показываем уведомление
+    resultDiv.innerHTML = '🗑️ Прогресс сброшен!';
+    
+    // Небольшая анимация
+    gsap.fromTo('.case-app', 
+      { opacity: 0.8 }, 
+      { opacity: 1, duration: 0.5, ease: 'power2.out' }
+    );
+    
+    console.log('💾 LocalStorage очищен, баланс сброшен');
+  }
+
+  // ========== СПИН (ОСНОВНАЯ МЕХАНИКА) ==========
+  function spinRoulette(prizeId) {
+    if (isSpinning || !itemWidth) return;
+    if (playerBalance < CONFIG.SPIN_COST) {
+      resultDiv.innerHTML = '😔 Недостаточно средств — пополни баланс!';
+      gsap.fromTo(resultDiv, { x: -6 }, { x: 0, duration: 0.4, ease: 'elastic.out(1,0.3)' });
+      return;
+    }
+
+    document.querySelectorAll('.item-card.win-highlight').forEach(c => {
+      gsap.to(c, { scale: 1, duration: 0.2, onComplete: () => {
+        c.classList.remove('win-highlight');
+        gsap.set(c, { clearProps: 'scale,filter' });
+      }});
+    });
+
+    playerBalance -= CONFIG.SPIN_COST;
+    siteBalance   += CONFIG.SPIN_COST;
+    updateBalances(true);
+
+    isSpinning = true;
+    spinBtn.disabled = true;
+    resultDiv.classList.remove('legendary-win');
+    resultDiv.innerHTML = '🌀 ВРАЩЕНИЕ...';
+
+    if (currentAnim) currentAnim.kill();
+    startTicks(CONFIG.SPIN_DURATION * 1000);
+
+    const stripW = itemWidth * stripItems.length;
+    const cw     = itemsStrip.parentElement.offsetWidth;
+    const startX = parseFloat(gsap.getProperty(itemsStrip, 'x')) || 0;
+    const spins  = CONFIG.MIN_SPINS + Math.floor(Math.random() * CONFIG.EXTRA_SPINS);
+    const dummyFinalX = startX - spins * stripW;
+
+    let targetCard   = null;
+    let targetUid    = null;
+    let finalTargetX = null;
+
+    const swapTimer = setTimeout(() => {
+      const liveX = parseFloat(gsap.getProperty(itemsStrip, 'x'));
+
+      swapStrip();
+
+      const cards = findCards(prizeId);
+      if (!cards.length) return;
+      targetCard   = cards[Math.floor(Math.random() * cards.length)];
+      targetUid    = targetCard.dataset.uid;
+      const tIdx   = Array.from(itemsStrip.children).indexOf(targetCard);
+      finalTargetX = -(tIdx * itemWidth - (cw / 2 - itemWidth / 2));
+
+      let newFinalX = finalTargetX;
+      while (newFinalX > liveX - stripW * 3) newFinalX -= stripW;
+
+      if (currentAnim) currentAnim.kill();
+      const remaining = Math.max(3.0, CONFIG.SPIN_DURATION - CONFIG.SWAP_DELAY / 1000);
+
+      currentAnim = gsap.fromTo(itemsStrip,
+        { x: liveX },
+        {
+          x: newFinalX,
+          duration: remaining,
+          ease: CONFIG.SPIN_EASE_END,
+          modifiers: {
+            x: gsap.utils.unitize(x => {
+              const v = parseFloat(x);
+              return ((v % stripW) - stripW) % stripW;
+            }),
+          },
+          onComplete: onSpinDone,
+        }
+      );
+    }, CONFIG.SWAP_DELAY);
+
+    function onSpinDone() {
+      clearTimeout(swapTimer);
+      stopTicks();
+
+      if (finalTargetX !== null) gsap.set(itemsStrip, { x: finalTargetX });
+      if (targetCard) targetCard.classList.add('win-highlight');
+
+      const winItem = stripItems.find(s => s.uid === targetUid);
+      if (winItem) {
+        const { rarity, icon, name, price } = winItem;
+        const isLegendary = rarity === 'legendary';
+        const isEpic      = rarity === 'epic';
+
+        resultDiv.innerHTML = `🎉 ВЫИГРЫШ: <span>${icon} ${name} — ${price}₽</span>`;
+        if (isLegendary) resultDiv.classList.add('legendary-win');
+
+        playerBalance += price;
+        siteBalance    = Math.max(0, siteBalance - price);
+        updateBalances(true);
+
+        addHistory(winItem);
+        renderOdds();
+        renderPool();
+        playWinSound(rarity);
+        if (navigator.vibrate) navigator.vibrate(RARITY_VIBRATE[rarity] || [60]);
+        if (isLegendary) launchConfetti(90);
+        else if (isEpic) launchConfetti(35);
+
+        if (targetCard) gsap.fromTo(targetCard,
+          { scale: 1.25 }, { scale: 1.1, duration: 0.5, ease: 'back.out(2)' }
+        );
+        if (isLegendary) {
+          gsap.fromTo('.case-app', { x: 0 },
+            { x: 8, duration: 0.06, repeat: 6, yoyo: true, ease: 'none',
+              onComplete: () => gsap.set('.case-app', { x: 0 }) }
+          );
+        }
+      }
+
+      isSpinning = false;
+      spinBtn.disabled = false;
+      currentAnim = null;
+    }
+
+    currentAnim = gsap.to(itemsStrip, {
+      x: dummyFinalX,
+      duration: CONFIG.SPIN_DURATION,
+      ease: CONFIG.SPIN_EASE_START,
+      modifiers: {
+        x: gsap.utils.unitize(x => {
+          const v = parseFloat(x);
+          return ((v % stripW) - stripW) % stripW;
+        }),
+      },
+      onComplete: onSpinDone,
+    });
+  }
+
+  // ========== ИНИЦИАЛИЗАЦИЯ ==========
+  function init() {
+    // Обновляем лейблы из конфига
+    costLabel.textContent  = `${CONFIG.SPIN_COST}₽`;
+    topupLabel.textContent = CONFIG.TOPUP_AMOUNT;
+
+    // Восстанавливаем сохранённый баланс
+    try {
+      const saved = JSON.parse(localStorage.getItem('opencase_state'));
+      if (saved && typeof saved.player === 'number') {
+        playerBalance = saved.player;
+        siteBalance   = saved.site;
+      }
+    } catch(e) {}
+
+    stripItems = buildStrip();
+    spinBtn.disabled = true;
+
+    renderStrip().then(() => {
+      spinBtn.disabled = false;
+      updateBalances(false);
+      renderOdds();
+      renderPool();
+    });
+  }
+
+  /* ============================================================
+     ОБРАБОТЧИКИ СОБЫТИЙ
+     Всё, что связано с кликами и действиями пользователя
+  ============================================================ */
+
+  // Кнопка спина
+  spinBtn.addEventListener('click', () => spinRoulette(getPrize().id));
+
+  // Кнопка пополнения баланса
+  topupBtn.addEventListener('click', () => {
+    playerBalance += CONFIG.TOPUP_AMOUNT;
+    updateBalances(true);
+    gsap.fromTo(topupBtn, { scale: 0.9 }, { scale: 1, duration: 0.3, ease: 'back.out(2)' });
+  });
+
+  // Кнопка сброса (НОВАЯ)
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (confirm('Сбросить весь прогресс? Баланс вернётся к начальному.')) {
+        resetStorage();
+      }
+    });
+  }
+
+  // Ресайз окна
+  window.addEventListener('resize', () => {
+    if (isSpinning) return;
+    const card = itemsStrip.querySelector('.item-card');
+    if (card) { itemWidth = card.offsetWidth + 10; centerStrip(); }
+  });
+
+  // Сохранение перед закрытием
+  window.addEventListener('beforeunload', () => {
+    try {
+      localStorage.setItem('opencase_state', JSON.stringify({
+        player: playerBalance,
+        site:   siteBalance,
+      }));
+    } catch(e) {}
+  });
+
+  // Запуск игры
+  init();
+
+})();
+</script>
+</body>
+</html>
