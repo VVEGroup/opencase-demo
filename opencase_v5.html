@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>OpenCase · Казино</title>
+  <meta name="description" content="OpenCase — браузерное казино: кейс, слоты и орёл/решка. Без регистрации, без установки.">
+  <meta property="og:title"       content="OpenCase · Казино">
+  <meta property="og:description" content="Кейс, слоты и орёл/решка прямо в браузере. Без регистрации.">
+  <meta property="og:type"        content="website">
+  <meta property="og:image"       content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+  <script>
+    if (typeof gsap === 'undefined') {
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0c10;';
+        document.body.innerHTML = '<div style="text-align:center;color:#e8edf4;font-family:sans-serif;padding:40px">'
+          + '<div style="font-size:3rem;margin-bottom:16px">⚠️</div>'
+          + '<div style="font-size:1.4rem;font-weight:700;color:#ffd966;margin-bottom:10px">Ошибка загрузки</div>'
+          + '<div style="color:#7a8a9c;font-size:1rem">Не удалось загрузить библиотеку анимаций.<br>'
+          + 'Проверьте интернет-соединение и перезагрузите страницу.</div>'
+          + '<button onclick="location.reload()" style="margin-top:24px;background:#ffd966;border:none;'
+          + 'color:#1a1505;font-size:1rem;font-weight:700;padding:12px 32px;border-radius:50px;cursor:pointer">'
+          + '🔄 Перезагрузить</button></div>';
+      });
+    }
+  </script>
+</head>
+<body>
+<noscript>
+  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0c10;font-family:sans-serif;text-align:center;padding:40px">
+    <div>
+      <div style="font-size:3rem;margin-bottom:16px">🎰</div>
+      <h2 style="color:#ffd966;font-size:1.5rem;margin-bottom:10px">JavaScript отключён</h2>
+      <p style="color:#7a8a9c">Для работы OpenCase необходим JavaScript.<br>Включите его в настройках браузера.</p>
+    </div>
+  </div>
+</noscript>
+<div class="confetti-container" id="confettiContainer"></div>
+
+<div class="case-app">
+  <div class="top-bar">
+    <div class="logo">🎰 NSRG.GP</div>
+    <div class="top-bar-actions">
+      <button id="soundToggle" class="icon-button" title="Звук" aria-label="Переключить звук">🔊</button>
+      <button id="resetBtn" class="icon-button" title="Сбросить прогресс" aria-label="Сбросить весь прогресс">🔄</button>
+    </div>
+    <div class="balance-panel">
+      <div class="balance-item">
+        <span class="label">👤 Игрок</span>
+        <span class="value" id="playerBalance">2600</span>₽
+      </div>
+      <div class="balance-item">
+        <span class="label">🏦 Казино</span>
+        <span class="value" id="siteBalance">10000</span>₽
+      </div>
+      <button class="topup-btn" id="topupBtn">+ <span id="topupLabel">1300</span>₽</button>
+    </div>
+  </div>
+
+  <div class="game-tabs" role="tablist" aria-label="Выбор игры">
+    <button class="tab-button active" id="tab-case"  data-game="case"  role="tab" aria-selected="true"  aria-controls="caseGame">📦 КЕЙС</button>
+    <button class="tab-button"        id="tab-slots" data-game="slots" role="tab" aria-selected="false" aria-controls="slotsGame">🎰 СЛОТЫ</button>
+    <button class="tab-button"        id="tab-coin"  data-game="coin"  role="tab" aria-selected="false" aria-controls="coinGame">🪙 ОРЁЛ/РЕШКА</button>
+  </div>
+
+  <!-- CASE GAME -->
+  <div id="caseGame" class="game-container active" role="tabpanel" aria-labelledby="tab-case" tabindex="0">
+    <div class="roulette-outer">
+      <div class="central-pointer"></div>
+      <div class="roulette-wrapper">
+        <div class="mask-left"></div>
+        <div class="mask-right"></div>
+        <div class="items-strip" id="itemsStrip"></div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="action-button" id="spinBtn" aria-label="Открыть кейс"><span class="btn-spinner"></span><span class="btn-label">КРУТИТЬ · <span id="spinCostLabel">130</span>₽</span></button>
+      <div class="result-window" id="resultDisplay">⚡ ЖМИ НА КНОПКУ</div>
+    </div>
+
+    <div class="case-pool">
+      <div class="pool-title">📦 Содержимое кейса</div>
+      <div class="pool-grid" id="poolGrid"></div>
+    </div>
+  </div>
+
+  <!-- СЛОТ -->
+  <div id="slotsGame" class="game-container" role="tabpanel" aria-labelledby="tab-slots" tabindex="0">
+    <div class="slot-machine" id="slotMachine">
+      
+      <div class="slot-reels-container">
+        <div class="win-line" id="winLine"></div>
+        <div class="slot-reels" id="slotReels"></div>
+      </div>
+      
+      <div class="slot-control-panel">
+        <div class="bet-row">
+          <button class="slot-bet-btn" data-slot-bet="10">10₽</button>
+          <button class="slot-bet-btn active" data-slot-bet="25">25₽</button>
+          <button class="slot-bet-btn" data-slot-bet="50">50₽</button>
+          <button class="slot-bet-btn" data-slot-bet="100">100₽</button>
+        </div>
+        
+        <div class="action-row" style="margin-top: 10px">
+          <button class="action-button" id="spinSlotBtn" aria-label="Запустить барабаны слот-машины"><span class="btn-spinner"></span><span class="btn-label">🎰 КРУТИТЬ · <span id="slotCostLabel">25</span>₽</span></button>
+          <div class="result-window" id="slotResult">⚡ ВЫБЕРИ СТАВКУ</div>
+        </div>
+      </div>
+    </div>
+
+    <details class="payout-table">
+      <summary>📊 Таблица выплат</summary>
+      <div class="payout-grid">
+        <div class="payout-row"><span>7️⃣ 7️⃣ 7️⃣</span><span class="payout-mult">×10</span><span class="payout-label">ДЖЕКПОТ</span></div>
+        <div class="payout-row"><span>💎 💎 💎</span><span class="payout-mult">×8</span><span class="payout-label">БРИЛЛИАНТЫ</span></div>
+        <div class="payout-row"><span>👑 👑 👑</span><span class="payout-mult">×5</span><span class="payout-label">КОРОЛЬ</span></div>
+        <div class="payout-row"><span>🍒/🍋/🍊 ×3</span><span class="payout-mult">×3</span><span class="payout-label">СЕТ</span></div>
+        <div class="payout-row"><span>Любая пара</span><span class="payout-mult">×1.5</span><span class="payout-label">ПАРА</span></div>
+        <div class="payout-row payout-note"><div style="flex:1;text-align:center">Тройник: 2.78% · Пара: 41.67% · Мимо: 55.56%</div></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ОРЁЛ И РЕШКА -->
+  <div id="coinGame" class="game-container" role="tabpanel" aria-labelledby="tab-coin" tabindex="0">
+    <div class="coin-machine" id="coinMachine">
+      <div class="coin-arena">
+        <div class="coin-glow"></div>
+        <div class="coin" id="coin">
+          <div class="coin-face coin-front">🦅</div>
+          <div class="coin-face coin-back">₽</div>
+        </div>
+      </div>
+
+      <div class="choice-panel">
+        <button class="choice-btn" id="chooseEagle" aria-label="Выбрать орёл" aria-pressed="false">
+          <span class="choice-icon">🦅</span>ОРЁЛ
+        </button>
+        <button class="choice-btn" id="chooseTails" aria-label="Выбрать решку" aria-pressed="false">
+          <span class="choice-icon">₽</span>РЕШКА
+        </button>
+      </div>
+
+      <div class="coin-control-panel">
+        <div class="bet-row">
+          <button class="coin-bet-btn" data-coin-bet="10">10₽</button>
+          <button class="coin-bet-btn active" data-coin-bet="25">25₽</button>
+          <button class="coin-bet-btn" data-coin-bet="50">50₽</button>
+          <button class="coin-bet-btn" data-coin-bet="100">100₽</button>
+        </div>
+        <div class="action-row">
+          <button class="action-button" id="flipCoinBtn" aria-label="Бросить монету"><span class="btn-spinner"></span><span class="btn-label">🪙 БРОСИТЬ · <span id="coinCostLabel">25</span>₽</span></button>
+          <div class="result-window" id="coinResult">⚡ ВЫБЕРИ ОРЁЛ ИЛИ РЕШКУ</div>
+        </div>
+        <div style="margin-top:12px">
+          <span class="coin-streak">Серия: <b id="coinStreakVal">0</b> <span id="coinStreakIcon">—</span></span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="coin-odds-note">
+      📊 <b>Шансы:</b> победа — <b>38.5%</b> (house edge 23%, честная монета была бы 50%) · поражение — 61.5% · выплата при победе <b>×2</b> ставки · RTP ≈ 77%
+    </div>
+  </div>
+
+  <!-- BOTTOM PANELS -->
+  <div class="bottom-row">
+    <div class="history-panel">
+      <div class="panel-title">🕘 История</div>
+      <div class="history-list" id="historyList">
+        <span class="history-empty">Пока ничего...</span>
+      </div>
+    </div>
+    
+    <div class="stats-panel">
+      <div class="panel-title">📈 Статистика</div>
+      <div class="stats-grid">
+        <div class="stat-item"><span class="stat-label">Всего игр</span><span class="stat-value" id="totalSpins">0</span></div>
+        <div class="stat-item"><span class="stat-label">Легендарок 📦</span><span class="stat-value" id="legendaryCount">0</span></div>
+        <div class="stat-item"><span class="stat-label">Орёл 🦅 побед</span><span class="stat-value" id="statEagle">0</span></div>
+        <div class="stat-item"><span class="stat-label">Решка ₽ побед</span><span class="stat-value" id="statTails">0</span></div>
+        <div class="stat-item"><span class="stat-label">Лучшая серия 🔥</span><span class="stat-value" id="statStreakBest">0</span></div>
+        <div class="stat-item"><span class="stat-label">Потрачено</span><span class="stat-value stat-negative" id="totalSpent">0₽</span></div>
+        <div class="stat-item"><span class="stat-label">Выиграно</span><span class="stat-value stat-positive" id="totalWon">0₽</span></div>
+        <div class="stat-item" style="grid-column:1/-1"><span class="stat-label">RTP общий</span><span class="stat-value" id="rtpValue" style="color:var(--gold)">—</span></div>
+        <div class="stat-item"><span class="stat-label">📦 Кейс RTP</span><span class="stat-value" id="caseRtpEl" style="color:var(--gold)">—</span></div>
+        <div class="stat-item"><span class="stat-label">🎰 Слоты RTP</span><span class="stat-value" id="slotsRtpEl" style="color:var(--gold)">—</span></div>
+        <div class="stat-item"><span class="stat-label">🪙 Монета RTP</span><span class="stat-value" id="coinRtpEl" style="color:var(--gold)">—</span></div>
+      </div>
+    </div>
+
+    <div class="odds-panel" id="oddsPanel">
+      <div class="panel-title">📊 Шансы кейса</div>
+      <div id="oddsList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

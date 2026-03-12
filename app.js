@@ -1,1082 +1,56 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-  <title>OpenCase · Казино</title>
-  <!-- DEV-4: meta description -->
-  <meta name="description" content="OpenCase — браузерное казино: кейс, слоты и орёл/решка. Без регистрации, без установки.">
-  <!-- UX-5: Open Graph для share-превью -->
-  <meta property="og:title"       content="OpenCase · Казино">
-  <meta property="og:description" content="Кейс, слоты и орёл/решка прямо в браузере. Без регистрации.">
-  <meta property="og:type"        content="website">
-  <!-- DEV-3: inline SVG favicon — без сетевых запросов -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
-  <!-- Fix-10: preconnect + link вместо блокирующего @import в CSS -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap">
-  <style>
-
-    :root {
-      --gold:        #ffd966;
-      --gold-dark:   #c49a1a;
-      --gold-glow:   #f5c54290;
-      --bg-deep:     #0a0c10;
-      --bg-card:     #0f1215;
-      --bg-panel:    #0b0e12;
-      --surface:     #1a1f28;
-      --surface2:    #232a35;
-      --border:      #2e3540;
-      --text:        #e8edf4;
-      --text-muted:  #7a8a9c;
-      --common:      #7a8a9c;
-      --rare:        #2f80ed;
-      --epic:        #bb6bd9;
-      --legendary:   #f2c94c;
-    }
-
-    * { margin:0; padding:0; box-sizing:border-box; }
-
-    body {
-      min-height: 100vh;
-      background: var(--bg-card);
-      background-image:
-        radial-gradient(ellipse 80% 50% at 50% -10%, #1e2a1a22, transparent),
-        radial-gradient(ellipse 60% 40% at 80% 110%, #1a1e2a33, transparent);
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 16px;
-      font-family: 'Rajdhani', 'Segoe UI', sans-serif;
-    }
-
-    .case-app {
-      max-width: 1200px; width: 100%;
-      background: rgba(14,17,22,0.97);
-      border: 1px solid rgba(255,215,0,0.12);
-      border-radius: 32px;
-      box-shadow: 0 30px 60px -15px rgba(0,0,0,0.8), 0 0 0 1px rgba(230,180,40,0.08) inset;
-      padding: 20px 20px 28px;
-    }
-
-    /* TOP BAR */
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-    .logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2rem;
-      letter-spacing: 3px;
-      color: var(--gold);
-      text-shadow: 0 0 20px #ffd96660;
-    }
-    
-    .top-bar-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    
-    .icon-button {
-      background: #333a45;
-      border: 1px solid #5a6475;
-      color: #ffd966;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      font-size: 1.2rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .icon-button:hover { background: #404a58; }
-    
-    .balance-panel { display: flex; gap: 10px; flex-wrap: wrap; }
-    .balance-item {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--bg-panel); border-radius: 50px;
-      padding: 7px 16px; border: 1px solid var(--border);
-      box-shadow: 0 4px 0 #05060788;
-    }
-    .balance-item .label {
-      color: var(--text-muted); font-size: 0.75rem;
-      text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
-    }
-    .balance-item .value {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.25rem; font-weight: 700;
-      color: #f0e6be; min-width: 60px; text-align: right;
-    }
-    .topup-btn {
-      background: transparent; border: 1px solid #3a5a3a;
-      color: #7ecf7e; padding: 7px 14px; border-radius: 50px;
-      font-family: 'Rajdhani', sans-serif; font-size: 0.85rem;
-      font-weight: 600; cursor: pointer; transition: all 0.15s;
-      box-shadow: 0 4px 0 #1a3a1a;
-    }
-    .topup-btn:hover { background: #7ecf7e22; border-color: #7ecf7e; transform: translateY(-2px); box-shadow: 0 6px 0 #1a3a1a; }
-    .topup-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #1a3a1a; }
-
-    /* GAME TABS */
-    .game-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    
-    .tab-button {
-      background: transparent;
-      border: 2px solid var(--border);
-      color: var(--text-muted);
-      padding: 12px 24px;
-      border-radius: 50px;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.2rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .tab-button:hover { border-color: var(--gold); color: var(--gold); }
-    .tab-button.active {
-      background: var(--gold);
-      border-color: var(--gold);
-      color: #1a1505;
-    }
-    
-    .game-container { display: none; opacity: 0; }
-    .game-container.active { display: block; animation: gameFadeIn 0.22s ease-out forwards; }
-    .game-container.active.no-anim { animation: none; opacity: 1; }
-    @keyframes gameFadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ROULETTE (РАБОЧИЙ КЕЙС) */
-    .roulette-outer { position: relative; margin: 0 0 18px; }
-    .central-pointer {
-      position: absolute; top: -2px; left: 50%;
-      transform: translateX(-50%);
-      width: 0; height: 0;
-      border-left: 22px solid transparent;
-      border-right: 22px solid transparent;
-      border-top: 34px solid var(--gold);
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.9));
-      z-index: 30; pointer-events: none;
-    }
-
-    .roulette-wrapper {
-      position: relative; overflow: hidden;
-      border-radius: 20px; background: var(--bg-deep);
-      padding: 8px 0; height: 170px;
-    }
-    .mask-left, .mask-right {
-      position: absolute; top: 0; width: 160px; height: 100%;
-      z-index: 20; pointer-events: none;
-    }
-    .mask-left  { left:  0; background: linear-gradient(to right, #0a0c10 20%, transparent); }
-    .mask-right { right: 0; background: linear-gradient(to left,  #0a0c10 20%, transparent); }
-
-    .items-strip { display: flex; gap: 10px; padding: 12px 0; height: 100%; will-change: transform; align-items: stretch; }
-
-    .item-card {
-      flex: 0 0 auto; width: 100px;
-      background: var(--surface); border-radius: 16px;
-      padding: 16px 6px 14px; text-align: center;
-      border: 2px solid transparent;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: var(--text); opacity: 0.85;
-      box-shadow: 0 8px 0 #0a0c1088;
-    }
-    .item-card.common    { border-color: #4a5a6c; background: #1e2530; }
-    .item-card.rare      { border-color: #1f5fa8; background: #0f2a45; }
-    .item-card.epic      { border-color: #8a4aaa; background: #2a1540; }
-    .item-card.legendary { border-color: #c4982a; background: #3a2a0c; }
-    .item-card.win-highlight {
-      outline: 4px solid var(--gold); outline-offset: 3px;
-      filter: brightness(1.25) drop-shadow(0 0 18px var(--gold));
-      z-index: 100; opacity: 1;
-    }
-    .item-icon { font-size: 3rem; line-height: 1; }
-    /* Fix-7: имя предмета под иконкой в ленте */
-    .item-name {
-      font-size: 0.58rem; font-weight: 600; color: var(--text-muted);
-      margin-top: 5px; line-height: 1.2; max-width: 90px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      text-align: center; text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .item-card.win-highlight .item-name { color: var(--gold); }
-
-    /* ACTION ROW */
-    .action-row {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 14px; margin: 20px 0;
-    }
-    .action-button {
-      background: linear-gradient(150deg, #f7dc55, #d4a020);
-      border: 2px solid #ffe080; color: #1a1505;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.9rem; letter-spacing: 4px;
-      padding: 14px 64px; border-radius: 100px;
-      box-shadow: 0 12px 0 #7a5010, 0 8px 30px var(--gold-glow);
-      cursor: pointer; transition: 0.08s linear;
-      position: relative; max-width: 100%;
-      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    }
-    .action-button:hover:not(:disabled) { filter: brightness(1.06); }
-    .action-button:active:not(:disabled) { transform: translateY(10px); box-shadow: 0 2px 0 #7a5010; }
-    /* BUG-10 fix: :disabled без .loading → полностью выключена; с .loading → loading-стиль */
-    .action-button:disabled:not(.loading) { opacity: 0.45; transform: translateY(6px); pointer-events: none; }
-    .action-button .btn-spinner {
-      display: none; width: 20px; height: 20px;
-      border: 3px solid rgba(26,21,5,0.3); border-top-color: #1a1505;
-      border-radius: 50%; animation: btnSpin 0.7s linear infinite; flex-shrink: 0;
-    }
-    .action-button.loading .btn-spinner { display: block; }
-    .action-button.loading { pointer-events: none; opacity: 0.85; transform: translateY(6px); box-shadow: 0 6px 0 #7a5010; }
-    @keyframes btnSpin { to { transform: rotate(360deg); } }
-
-    .result-window {
-      background: #00000070; border-radius: 20px;
-      padding: 12px 28px; border: 1.5px solid #ffd96680;
-      color: #ffeaac; font-size: 1.3rem; font-weight: 600;
-      backdrop-filter: blur(12px); text-align: center;
-      word-break: break-word; line-height: 1.4; width: 100%; max-width: 540px;
-    }
-
-    /* CASE POOL */
-    .case-pool { margin: 0 0 20px; }
-    .pool-title {
-      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px;
-      color: var(--text-muted); font-weight: 700; margin-bottom: 12px;
-    }
-    .pool-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 10px;
-    }
-    .pool-card {
-      background: var(--surface); border-radius: 16px;
-      border: 2px solid transparent;
-      padding: 14px 10px 12px;
-      display: flex; flex-direction: column; align-items: center;
-      gap: 6px; text-align: center; position: relative;
-    }
-    .pool-card.common    { border-color: #4a5a6c; background: #1e2530; }
-    .pool-card.rare      { border-color: #1f5fa8; background: #0f2a45; }
-    .pool-card.epic      { border-color: #8a4aaa; background: #2a1540; }
-    .pool-card.legendary { border-color: #c4982a; background: #3a2a0c; }
-    .pool-card.blocked   { opacity: 0.35; filter: grayscale(0.7); }
-
-    .pool-card-badge {
-      position: absolute; top: 7px; left: 8px;
-      font-size: 0.55rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
-    }
-    .pool-card-lock {
-      position: absolute; top: 7px; right: 8px;
-      font-size: 0.7rem; opacity: 0.5;
-    }
-    .common .pool-card-badge { background: #2a3540; color: #7a8a9c; }
-    .rare .pool-card-badge { background: #0f2540; color: #5aaaf2; }
-    .epic .pool-card-badge { background: #250f40; color: #cc88ee; }
-    .legendary .pool-card-badge { background: #3a2500; color: #f2c94c; }
-
-    .pool-card-icon  { font-size: 2.6rem; }
-    .pool-card-name  { font-size: 0.72rem; font-weight: 600; color: var(--text); }
-    .pool-card-price { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: #f5d77c; }
-    .pool-card-chance { font-size: 0.65rem; color: var(--text-muted); }
-
-    /* ИСПРАВЛЕННЫЙ СЛОТ-АППАРАТ */
-    .slot-machine {
-      background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-      border: 4px solid #aa8e5a;
-      border-radius: 30px;
-      padding: 30px;
-      margin: 20px 0;
-      text-align: center;
-      box-shadow: 0 20px 30px rgba(0,0,0,0.8), inset 0 0 20px #aa8e5a33;
-      position: relative;
-    }
-    
-    .slot-machine::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      border-radius: 30px;
-      border: 2px solid #aa8e5a44;
-      pointer-events: none;
-    }
-    
-    .slot-reels-container {
-      background: #000;
-      border: 3px solid #aa8e5a;
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
-      position: relative;
-    }
-    
-    .slot-reels {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      perspective: 1000px;
-    }
-    
-    .reel-container {
-      flex: 1;
-      max-width: 150px;
-      background: #111;
-      border: 2px solid #6b4e2e;
-      border-radius: 15px;
-      overflow: hidden;
-      position: relative;
-      box-shadow: 0 5px 0 #3a2a1a;
-    }
-    
-    .reel-window {
-      position: relative;
-      height: 150px;
-      overflow: hidden;
-      background: #0a0a0a;
-    }
-    
-    .reel-strip {
-      position: relative;
-      width: 100%;
-    }
-    
-    .reel-symbol {
-      height: 150px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 4rem;
-      background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
-      border-bottom: 1px solid #3a3a3a;
-      transition: background 0.3s, box-shadow 0.3s;
-    }
-    /* Fix-6: подсветка выигрышного символа в центре барабана */
-    .reel-symbol.win-symbol {
-      background: linear-gradient(135deg, #3a2800, #1e1500);
-      box-shadow: 0 0 24px var(--gold-glow), inset 0 0 16px rgba(255,215,0,0.12);
-      animation: symbolGlow 0.5s ease-out;
-    }
-    @keyframes symbolGlow {
-      0%   { filter: brightness(1); }
-      40%  { filter: brightness(1.5) drop-shadow(0 0 12px var(--gold)); }
-      100% { filter: brightness(1); }
-    }
-    
-    .reel-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(to bottom, 
-        transparent 0%,
-        transparent 40%,
-        rgba(0,0,0,0.2) 45%,
-        rgba(255,215,0,0.1) 50%,
-        rgba(0,0,0,0.2) 55%,
-        transparent 60%,
-        transparent 100%
-      );
-      pointer-events: none;
-      z-index: 2;
-    }
-    
-    .win-line {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
-      transform: translateY(-50%);
-      z-index: 10;
-      opacity: 0;
-      transition: opacity 0.3s;
-      box-shadow: 0 0 20px var(--gold);
-      pointer-events: none;
-    }
-    
-    .win-line.active {
-      opacity: 1;
-      animation: winLinePulse 0.5s ease-out;
-    }
-    
-    @keyframes winLinePulse {
-      0% { opacity: 0.3; }
-      50% { opacity: 1; }
-      100% { opacity: 0.3; }
-    }
-    
-    .slot-control-panel {
-      background: #2a1e12;
-      border: 2px solid #aa8e5a;
-      border-radius: 50px;
-      padding: 20px;
-      margin-top: 20px;
-    }
-    
-    .slot-bet-btn {
-      background: #4a3a2a;
-      border: 2px solid #8b6b3a;
-      color: #ffd966;
-      padding: 12px 25px;
-      border-radius: 50px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      cursor: pointer;
-      margin: 0 5px;
-      transition: all 0.2s;
-      text-shadow: 0 2px 0 #3a2a1a;
-      box-shadow: 0 5px 0 #3a2a1a;
-    }
-    
-    .slot-bet-btn:hover {
-      background: #5a4a3a;
-      transform: translateY(-2px);
-      box-shadow: 0 7px 0 #3a2a1a;
-    }
-    
-    .slot-bet-btn:active {
-      transform: translateY(5px);
-      box-shadow: 0 2px 0 #3a2a1a;
-    }
-    
-    .slot-bet-btn.active {
-      background: #f5c542;
-      border-color: #ffd966;
-      color: #1a1505;
-      text-shadow: none;
-    }
-
-    /* BOTTOM PANELS */
-    .bottom-row { display: flex; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
-    .history-panel, .stats-panel, .odds-panel {
-      background: var(--bg-panel);
-      border-radius: 16px; padding: 12px 14px; border: 1px solid var(--border);
-    }
-    .history-panel { flex: 1 1 300px; }
-    .stats-panel { flex: 1 1 300px; }
-    .odds-panel { flex: 0 1 220px; }
-
-    /* UX-4 fix: на мобильных вместо вертикального стека — горизонтальный скролл-ряд.
-       Каждая панель фиксированной ширины, всё прокручивается без увеличения высоты страницы */
-    @media (max-width: 680px) {
-      .bottom-row {
-        flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch; padding-bottom: 8px;
-        scrollbar-width: thin; scrollbar-color: #2e3540 transparent;
-      }
-      .bottom-row::-webkit-scrollbar { height: 4px; }
-      .bottom-row::-webkit-scrollbar-thumb { background: #2e3540; border-radius: 2px; }
-      .history-panel, .stats-panel, .odds-panel {
-        flex: 0 0 85vw; max-width: 320px;
-        scroll-snap-align: start; min-width: 240px;
-      }
-    }
-    
-    .panel-title {
-      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px;
-      color: var(--text-muted); font-weight: 700; margin-bottom: 10px;
-    }
-    
-    .history-list {
-      display: flex; gap: 6px; flex-wrap: wrap;
-      max-height: 120px; overflow-y: auto;
-      scrollbar-width: thin; scrollbar-color: #2e3540 transparent;
-    }
-    .history-list::-webkit-scrollbar { width: 4px; }
-    .history-list::-webkit-scrollbar-thumb { background: #2e3540; border-radius: 2px; }
-    .history-chip {
-      display: flex; align-items: center; gap: 4px;
-      border-radius: 30px; padding: 4px 10px;
-      font-size: 0.78rem; font-weight: 600;
-      border: 1px solid transparent;
-    }
-    .history-chip.win  { background: #0f2a18; border-color: #1f5a38; color: #6ee89a; }
-    .history-chip.loss { background: #2a0f0f; border-color: #5a1f1f; color: #e86e6e; }
-    .history-chip.neutral { background: var(--surface2); color: var(--text-muted); }
-    .history-chip .src { font-size: 0.6rem; opacity: 0.6; background: rgba(255,255,255,0.08); border-radius: 3px; padding: 1px 4px; }
-    .history-empty { color: var(--text-muted); font-size: 0.82rem; }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    .stat-item {
-      display: flex; flex-direction: column;
-      background: var(--surface2); padding: 8px; border-radius: 8px;
-    }
-    .stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
-    .stat-value { font-size: 1.2rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-    .stat-positive { color: #4caf50; }
-    .stat-negative { color: #f44336; }
-
-    .odds-row {
-      display: flex; justify-content: space-between;
-      padding: 4px 0; border-bottom: 1px solid #1e2530; font-size: 0.82rem;
-    }
-    .odds-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-    .odds-name { display: flex; align-items: center; color: var(--text); }
-    .odds-pct { font-family: 'JetBrains Mono', monospace; color: var(--text-muted); }
-
-    .confetti-container {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 9999;
-    }
-    .confetto {
-      position: absolute; top: -20px;
-      width: 8px; height: 8px; border-radius: 2px;
-      animation: confettiFall linear forwards;
-    }
-    @keyframes confettiFall {
-      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-    }
-
-    .notification {
-      position: fixed; top: 20px; right: 20px;
-      background: var(--surface);
-      border: 2px solid var(--gold);
-      color: var(--text);
-      padding: 12px 20px;
-      border-radius: 50px;
-      font-weight: 600; font-size: 0.95rem;
-      z-index: 10000;
-      animation: notifIn 0.3s ease-out;
-      max-width: 280px;
-    }
-    @keyframes notifIn {
-      from { transform: translateX(110%); opacity: 0; }
-      to   { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes notifOut {
-      from { transform: translateX(0); opacity: 1; }
-      to   { transform: translateX(110%); opacity: 0; }
-    }
-    .notification.leaving { animation: notifOut 0.25s ease-in forwards; }
-    /* BUG-08 fix: анимация для confirm-модала */
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: scale(0.94); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-
-    /* ========== ОРЁЛ И РЕШКА ========== */
-    .coin-machine {
-      background: linear-gradient(145deg, #1a1208, #0f0c06);
-      border: 4px solid #aa8e5a;
-      border-radius: 30px;
-      padding: 30px;
-      margin: 20px 0;
-      text-align: center;
-      box-shadow: 0 20px 30px rgba(0,0,0,0.8), inset 0 0 20px #aa8e5a33;
-      position: relative;
-    }
-    .coin-machine::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      border-radius: 26px; border: 2px solid #aa8e5a44; pointer-events: none;
-    }
-
-    .coin-arena {
-      position: relative;
-      width: 220px; height: 220px;
-      margin: 0 auto 24px;
-      perspective: 800px;
-    }
-    .coin-glow {
-      position: absolute; inset: -24px;
-      background: radial-gradient(circle, rgba(255,215,0,0.18) 0%, transparent 70%);
-      border-radius: 50%;
-      animation: coinPulse 2.4s ease-in-out infinite;
-      pointer-events: none;
-    }
-    @keyframes coinPulse {
-      0%, 100% { opacity: 0.4; transform: scale(1); }
-      50%       { opacity: 0.8; transform: scale(1.06); }
-    }
-    .coin {
-      width: 100%; height: 100%;
-      transform-style: preserve-3d;
-      position: relative;
-    }
-    .coin-face {
-      position: absolute; inset: 0;
-      backface-visibility: hidden;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 5.5rem;
-      border: 6px solid #c9a227;
-      box-shadow: 0 0 24px rgba(255,215,0,0.4), inset 0 0 20px rgba(0,0,0,0.3);
-    }
-    .coin-front {
-      background: radial-gradient(circle at 35% 30%, #ffe066, #b8860b 80%);
-    }
-    .coin-back {
-      background: radial-gradient(circle at 35% 30%, #d0d0d0, #707070 80%);
-      transform: rotateY(180deg);
-    }
-    @keyframes coinFlip {
-      0%   { transform: rotateY(0deg); }
-      100% { transform: rotateY(1800deg); }
-    }
-    .coin.flipping { animation: coinFlip 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-
-    .choice-panel {
-      display: flex; justify-content: center; gap: 20px; margin: 20px 0;
-    }
-    .choice-btn {
-      background: #1a1208;
-      border: 2px solid #5a4a2a;
-      color: var(--text-muted);
-      width: 130px; height: 130px;
-      border-radius: 20px;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.4rem; letter-spacing: 2px;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 8px;
-      box-shadow: 0 8px 0 #0a0804;
-    }
-    .choice-btn .choice-icon { font-size: 2.8rem; line-height: 1; }
-    .choice-btn:hover {
-      border-color: var(--gold); color: var(--gold);
-      transform: translateY(-3px);
-      box-shadow: 0 11px 0 #0a0804;
-    }
-    .choice-btn.active {
-      background: linear-gradient(145deg, #3a2800, #261c00);
-      border-color: var(--gold); color: var(--gold);
-      box-shadow: 0 8px 0 #0a0804, 0 0 20px #ffd96640;
-    }
-    /* Fix-5: визуальный фидбек результата броска монеты */
-    .choice-btn.result-win {
-      background: linear-gradient(145deg, #0d2a10, #071a09);
-      border-color: #4caf50; color: #4caf50;
-      box-shadow: 0 8px 0 #0a1a0a, 0 0 28px #4caf5050;
-      animation: choicePop 0.35s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    .choice-btn.result-loss {
-      background: linear-gradient(145deg, #2a0d0d, #1a0707);
-      border-color: #f44336; color: #f44336;
-      box-shadow: 0 8px 0 #1a0a0a, 0 0 16px #f4433630;
-    }
-    @keyframes choicePop {
-      0%   { transform: scale(1) translateY(0); }
-      40%  { transform: scale(1.1) translateY(-6px); }
-      100% { transform: scale(1) translateY(0); }
-    }
-
-    .coin-control-panel {
-      background: #1a1208;
-      border: 2px solid #aa8e5a;
-      border-radius: 50px;
-      padding: 20px;
-      margin-top: 20px;
-    }
-    .coin-bet-btn {
-      background: #4a3a2a;
-      border: 2px solid #8b6b3a;
-      color: var(--gold);
-      padding: 10px 20px;
-      border-radius: 50px;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 1.1rem; font-weight: 700;
-      cursor: pointer; margin: 0 4px;
-      transition: all 0.2s;
-      box-shadow: 0 4px 0 #2a1a08;
-    }
-    .coin-bet-btn:hover {
-      background: #5a4a3a;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 0 #2a1a08;
-    }
-    .coin-bet-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #2a1a08; }
-    .coin-bet-btn.active {
-      background: var(--gold); border-color: var(--gold);
-      color: #1a1505; text-shadow: none;
-      box-shadow: 0 4px 0 #7a5010;
-    }
-
-    .coin-streak {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: var(--surface2); border-radius: 50px;
-      padding: 5px 14px; font-size: 0.85rem;
-      color: var(--text-muted); margin-top: 10px;
-    }
-    .coin-streak b { color: var(--gold); font-family: 'JetBrains Mono', monospace; }
-
-    /* BALANCE FLOAT ANIMATION */
-    .balance-float {
-      position: fixed;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.1rem;
-      font-weight: 700;
-      pointer-events: none;
-      z-index: 99998;
-      white-space: nowrap;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-      animation: balanceFloat 1.4s ease-out forwards;
-    }
-    .balance-float.positive { color: #4caf50; }
-    .balance-float.negative { color: #f44336; }
-    @keyframes balanceFloat {
-      0%   { opacity: 1; transform: translateY(0) scale(1); }
-      30%  { opacity: 1; transform: translateY(-20px) scale(1.15); }
-      100% { opacity: 0; transform: translateY(-60px) scale(0.9); }
-    }
-
-    /* BET ROW — flex wrap для мобильных */
-    .bet-row {
-      display: flex; flex-wrap: wrap; justify-content: center;
-      gap: 6px; margin-bottom: 14px;
-    }
-
-    @media (max-width: 680px) {
-      .case-app { padding: 14px; }
-      .item-card { width: 88px; }
-      .item-icon { font-size: 2.3rem; }
-      .slot-reels { gap: 5px; }
-      .reel-container { max-width: 80px; }
-      .reel-symbol { height: 100px; font-size: 2.5rem; }
-      /* UX-1 fix: reel-window должен совпадать с высотой символа на мобильных */
-      .reel-window { height: 100px; }
-      .coin-arena { width: 160px; height: 160px; }
-      .coin-face { font-size: 4rem; }
-      .choice-btn { width: 100px; height: 100px; font-size: 1.1rem; }
-      .choice-btn .choice-icon { font-size: 2.2rem; }
-    }
-
-    /* GSN-3: Таблица выплат / шансов */
-    .payout-table {
-      background: var(--bg-panel); border: 1px solid var(--border);
-      border-radius: 14px; margin-top: 14px; padding: 0;
-      overflow: hidden;
-    }
-    .payout-table summary {
-      padding: 10px 16px; cursor: pointer; font-size: 0.82rem;
-      font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-      color: var(--text-muted); list-style: none; user-select: none;
-    }
-    .payout-table summary:hover { color: var(--gold); }
-    .payout-grid { padding: 4px 16px 12px; }
-    .payout-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 5px 0; border-bottom: 1px solid var(--border);
-      font-size: 0.9rem;
-    }
-    .payout-row:last-child { border-bottom: none; }
-    .payout-row > span:first-child { flex: 1; color: var(--text); font-size: 1rem; }
-    .payout-mult { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--gold); min-width: 40px; text-align: right; }
-    .payout-label { color: var(--text-muted); font-size: 0.75rem; min-width: 90px; text-align: right; }
-    .payout-note { color: var(--text-muted) !important; font-size: 0.72rem; font-style: italic; }
-    .coin-odds-note {
-      background: var(--bg-panel); border: 1px solid var(--border);
-      border-radius: 14px; margin-top: 14px; padding: 10px 16px;
-      font-size: 0.82rem; color: var(--text-muted); line-height: 1.6;
-    }
-    .coin-odds-note b { color: var(--gold); }
-
-    /* DEV-5: confirm modal — CSS вместо inline styles */
-    .confirm-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 99999; backdrop-filter: blur(6px);
-      animation: gameFadeIn 0.2s ease-out;
-    }
-    .confirm-box {
-      background: #0f1215; border: 1px solid #ffd96660; border-radius: 24px;
-      padding: 28px 32px; max-width: 340px; width: 90%; text-align: center;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-      animation: modalFadeIn 0.22s cubic-bezier(0.34,1.56,0.64,1) forwards;
-    }
-    .confirm-icon    { font-size: 2rem; margin-bottom: 12px; }
-    .confirm-message { color: #e8edf4; font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; }
-    .confirm-btns    { display: flex; gap: 10px; justify-content: center; }
-    .confirm-yes {
-      background: linear-gradient(150deg,#f7dc55,#d4a020); border: none;
-      color: #1a1505; font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.1rem; letter-spacing: 2px; padding: 10px 28px;
-      border-radius: 50px; cursor: pointer;
-    }
-    .confirm-yes:hover { filter: brightness(1.08); }
-    .confirm-no {
-      background: #1a1f28; border: 1px solid #2e3540; color: #7a8a9c;
-      font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem;
-      letter-spacing: 2px; padding: 10px 28px; border-radius: 50px; cursor: pointer;
-    }
-    .confirm-no:hover { border-color: #7a8a9c; color: #e8edf4; }
-
-    .legendary-overlay {
-      position: fixed; inset: 0; z-index: 99990;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: radial-gradient(ellipse at center, #3a2a0088 0%, #000000ee 100%);
-      backdrop-filter: blur(4px);
-      animation: legendaryFadeIn 0.4s ease-out forwards;
-      cursor: pointer;
-    }
-    @keyframes legendaryFadeIn {
-      from { opacity: 0; } to { opacity: 1; }
-    }
-    .legendary-overlay.leaving {
-      animation: legendaryFadeOut 0.5s ease-in forwards;
-    }
-    @keyframes legendaryFadeOut {
-      from { opacity: 1; } to { opacity: 0; }
-    }
-    .legendary-badge {
-      font-size: 0.9rem; font-weight: 800; letter-spacing: 4px;
-      color: #ffd966; text-transform: uppercase;
-      text-shadow: 0 0 30px #ffd966; margin-bottom: 10px;
-      animation: legendaryPulse 1.2s ease-in-out infinite;
-    }
-    @keyframes legendaryPulse {
-      0%,100% { opacity: 1; } 50% { opacity: 0.6; }
-    }
-    .legendary-icon-big {
-      font-size: 8rem; line-height: 1;
-      filter: drop-shadow(0 0 40px #ffd96688);
-      animation: legendaryBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
-    }
-    @keyframes legendaryBounce {
-      from { transform: scale(0.2); opacity: 0; }
-      to   { transform: scale(1);   opacity: 1; }
-    }
-    .legendary-name {
-      font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem;
-      letter-spacing: 4px; color: #ffd966;
-      text-shadow: 0 0 40px #ffd96680;
-      margin: 10px 0 6px;
-    }
-    .legendary-price {
-      font-family: 'JetBrains Mono', monospace; font-size: 2rem;
-      color: #ffe9a0; font-weight: 700;
-    }
-    .legendary-tap {
-      margin-top: 28px; font-size: 0.8rem; letter-spacing: 3px;
-      color: #ffd96680; text-transform: uppercase;
-      animation: legendaryPulse 1.5s ease-in-out infinite;
-    }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <!-- Fix-13: если CDN недоступен — показываем понятное сообщение вместо JS-краша -->
-  <script>
-    if (typeof gsap === 'undefined') {
-      document.addEventListener('DOMContentLoaded', function() {
-        document.body.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0c10;';
-        document.body.innerHTML = '<div style="text-align:center;color:#e8edf4;font-family:sans-serif;padding:40px">'
-          + '<div style="font-size:3rem;margin-bottom:16px">⚠️</div>'
-          + '<div style="font-size:1.4rem;font-weight:700;color:#ffd966;margin-bottom:10px">Ошибка загрузки</div>'
-          + '<div style="color:#7a8a9c;font-size:1rem">Не удалось загрузить библиотеку анимаций.<br>'
-          + 'Проверьте интернет-соединение и перезагрузите страницу.</div>'
-          + '<button onclick="location.reload()" style="margin-top:24px;background:#ffd966;border:none;'
-          + 'color:#1a1505;font-size:1rem;font-weight:700;padding:12px 32px;border-radius:50px;cursor:pointer">'
-          + '🔄 Перезагрузить</button></div>';
-      });
-    }
-  </script>
-</head>
-<body>
-<!-- DEV-2: fallback при отключённом JS -->
-<noscript>
-  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0c10;font-family:sans-serif;text-align:center;padding:40px">
-    <div>
-      <div style="font-size:3rem;margin-bottom:16px">🎰</div>
-      <h2 style="color:#ffd966;font-size:1.5rem;margin-bottom:10px">JavaScript отключён</h2>
-      <p style="color:#7a8a9c">Для работы OpenCase необходим JavaScript.<br>Включите его в настройках браузера.</p>
-    </div>
-  </div>
-</noscript>
-<div class="confetti-container" id="confettiContainer"></div>
-
-<div class="case-app">
-  <div class="top-bar">
-    <div class="logo">🎰 OpenCase</div>
-    <div class="top-bar-actions">
-      <button id="soundToggle" class="icon-button" title="Звук" aria-label="Переключить звук">🔊</button>
-      <button id="resetBtn" class="icon-button" title="Сбросить прогресс" aria-label="Сбросить весь прогресс">🔄</button>
-    </div>
-    <div class="balance-panel">
-      <div class="balance-item">
-        <span class="label">👤 Игрок</span>
-        <span class="value" id="playerBalance">1000</span>₽
-      </div>
-      <div class="balance-item">
-        <span class="label">🏦 Казино</span>
-        <span class="value" id="siteBalance">1500</span>₽
-      </div>
-      <button class="topup-btn" id="topupBtn">+ <span id="topupLabel">500</span>₽</button>
-    </div>
-  </div>
-
-  <div class="game-tabs" role="tablist" aria-label="Выбор игры">
-    <button class="tab-button active" id="tab-case"  data-game="case"  role="tab" aria-selected="true"  aria-controls="caseGame">📦 КЕЙС</button>
-    <button class="tab-button"        id="tab-slots" data-game="slots" role="tab" aria-selected="false" aria-controls="slotsGame">🎰 СЛОТЫ</button>
-    <button class="tab-button"        id="tab-coin"  data-game="coin"  role="tab" aria-selected="false" aria-controls="coinGame">🪙 ОРЁЛ/РЕШКА</button>
-  </div>
-
-  <!-- CASE GAME (РАБОЧИЙ) -->
-  <div id="caseGame" class="game-container active" role="tabpanel" aria-labelledby="tab-case" tabindex="0">
-    <div class="roulette-outer">
-      <div class="central-pointer"></div>
-      <div class="roulette-wrapper">
-        <div class="mask-left"></div>
-        <div class="mask-right"></div>
-        <div class="items-strip" id="itemsStrip"></div>
-      </div>
-    </div>
-
-    <div class="action-row">
-      <button class="action-button" id="spinBtn" aria-label="Открыть кейс"><span class="btn-spinner"></span><span class="btn-label">КРУТИТЬ · <span id="spinCostLabel">130</span>₽</span></button>
-      <div class="result-window" id="resultDisplay">⚡ ЖМИ НА КНОПКУ</div>
-    </div>
-
-    <div class="case-pool">
-      <div class="pool-title">📦 Содержимое кейса</div>
-      <div class="pool-grid" id="poolGrid"></div>
-    </div>
-  </div>
-
-  <!-- ИСПРАВЛЕННЫЙ СЛОТ -->
-  <div id="slotsGame" class="game-container" role="tabpanel" aria-labelledby="tab-slots" tabindex="0">
-    <div class="slot-machine">
-      
-      <div class="slot-reels-container">
-        <div class="win-line" id="winLine"></div>
-        <div class="slot-reels" id="slotReels">
-          <!-- Барабаны будут созданы через JS -->
-        </div>
-      </div>
-      
-      <div class="slot-control-panel">
-        <div class="bet-row">
-          <button class="slot-bet-btn" data-slot-bet="10">10₽</button>
-          <button class="slot-bet-btn active" data-slot-bet="25">25₽</button>
-          <button class="slot-bet-btn" data-slot-bet="50">50₽</button>
-          <button class="slot-bet-btn" data-slot-bet="100">100₽</button>
-        </div>
-        
-        <div class="action-row" style="margin-top: 10px">
-          <button class="action-button" id="spinSlotBtn" aria-label="Запустить барабаны слот-машины"><span class="btn-spinner"></span><span class="btn-label">🎰 КРУТИТЬ · <span id="slotCostLabel">25</span>₽</span></button>
-          <div class="result-window" id="slotResult">⚡ ВЫБЕРИ СТАВКУ</div>
-        </div>
-      </div>
-    </div>
-    <!-- GSN-3: таблица выплат слотов -->
-    <details class="payout-table">
-      <summary>📊 Таблица выплат</summary>
-      <div class="payout-grid">
-        <div class="payout-row"><span>7️⃣ 7️⃣ 7️⃣</span><span class="payout-mult">×10</span><span class="payout-label">ДЖЕКПОТ</span></div>
-        <div class="payout-row"><span>💎 💎 💎</span><span class="payout-mult">×8</span><span class="payout-label">БРИЛЛИАНТЫ</span></div>
-        <div class="payout-row"><span>👑 👑 👑</span><span class="payout-mult">×5</span><span class="payout-label">КОРОЛЬ</span></div>
-        <div class="payout-row"><span>🍒/🍋/🍊 ×3</span><span class="payout-mult">×3</span><span class="payout-label">СЕТ</span></div>
-        <div class="payout-row"><span>Любая пара</span><span class="payout-mult">×1.5</span><span class="payout-label">ПАРА</span></div>
-        <div class="payout-row payout-note"><span colspan="3">Тройник: 2.78% · Пара: 41.67% · Мимо: 55.56%</span></div>
-      </div>
-    </details>
-  </div>
-
-  <!-- ОРЁЛ И РЕШКА -->
-  <div id="coinGame" class="game-container" role="tabpanel" aria-labelledby="tab-coin" tabindex="0">
-    <div class="coin-machine">
-      <div class="coin-arena">
-        <div class="coin-glow"></div>
-        <div class="coin" id="coin">
-          <div class="coin-face coin-front">🦅</div>
-          <div class="coin-face coin-back">₽</div>
-        </div>
-      </div>
-
-      <div class="choice-panel">
-        <button class="choice-btn" id="chooseEagle" aria-label="Выбрать орёл" aria-pressed="false">
-          <span class="choice-icon">🦅</span>ОРЁЛ
-        </button>
-        <button class="choice-btn" id="chooseTails" aria-label="Выбрать решку" aria-pressed="false">
-          <span class="choice-icon">₽</span>РЕШКА
-        </button>
-      </div>
-
-      <div class="coin-control-panel">
-        <div class="bet-row">
-          <button class="coin-bet-btn" data-coin-bet="10">10₽</button>
-          <button class="coin-bet-btn active" data-coin-bet="25">25₽</button>
-          <button class="coin-bet-btn" data-coin-bet="50">50₽</button>
-          <button class="coin-bet-btn" data-coin-bet="100">100₽</button>
-        </div>
-        <div class="action-row">
-          <button class="action-button" id="flipCoinBtn" aria-label="Бросить монету"><span class="btn-spinner"></span><span class="btn-label">🪙 БРОСИТЬ · <span id="coinCostLabel">25</span>₽</span></button>
-          <div class="result-window" id="coinResult">⚡ ВЫБЕРИ ОРЁЛ ИЛИ РЕШКУ</div>
-        </div>
-        <div style="margin-top:12px">
-          <span class="coin-streak">Серия: <b id="coinStreakVal">0</b> <span id="coinStreakIcon">—</span></span>
-        </div>
-      </div>
-    </div>
-    <!-- GSN-3: шансы монеты -->
-    <div class="coin-odds-note">
-      📊 <b>Шансы:</b> победа — <b>38.5%</b> · поражение — 61.5% · выплата при победе <b>×2</b> ставки · RTP ≈ 77%
-    </div>
-  </div>
-
-  <!-- BOTTOM PANELS -->
-  <div class="bottom-row">
-    <div class="history-panel">
-      <div class="panel-title">🕘 История</div>
-      <div class="history-list" id="historyList">
-        <span class="history-empty">Пока ничего...</span>
-      </div>
-    </div>
-    
-    <div class="stats-panel">
-      <div class="panel-title">📈 Статистика</div>
-      <div class="stats-grid">
-        <div class="stat-item"><span class="stat-label">Всего игр</span><span class="stat-value" id="totalSpins">0</span></div>
-        <div class="stat-item"><span class="stat-label">Легендарок 📦</span><span class="stat-value" id="legendaryCount">0</span></div>
-        <div class="stat-item"><span class="stat-label">Орёл 🦅</span><span class="stat-value" id="statEagle">0</span></div>
-        <div class="stat-item"><span class="stat-label">Решка ₽</span><span class="stat-value" id="statTails">0</span></div>
-        <div class="stat-item"><span class="stat-label">Потрачено</span><span class="stat-value stat-negative" id="totalSpent">0₽</span></div>
-        <div class="stat-item"><span class="stat-label">Выиграно</span><span class="stat-value stat-positive" id="totalWon">0₽</span></div>
-        <div class="stat-item" style="grid-column:1/-1"><span class="stat-label">RTP общий</span><span class="stat-value" id="rtpValue" style="color:var(--gold)">—</span></div>
-        <!-- GSN-5: per-game RTP -->
-        <div class="stat-item"><span class="stat-label">📦 Кейс RTP</span><span class="stat-value" id="caseRtpEl" style="color:var(--gold)">—</span></div>
-        <div class="stat-item"><span class="stat-label">🎰 Слоты RTP</span><span class="stat-value" id="slotsRtpEl" style="color:var(--gold)">—</span></div>
-        <div class="stat-item"><span class="stat-label">🪙 Монета RTP</span><span class="stat-value" id="coinRtpEl" style="color:var(--gold)">—</span></div>
-      </div>
-    </div>
-
-    <div class="odds-panel" id="oddsPanel">
-      <div class="panel-title">📊 Шансы кейса</div>
-      <div id="oddsList"></div>
-    </div>
-  </div>
-</div>
-
-<script>
+/**
+ * OpenCase v5 — браузерное казино (vanilla JS)
+ *
+ * АРХИТЕКТУРА ДЛЯ МИГРАЦИИ НА REACT:
+ * ─────────────────────────────────────────────────────────────
+ * config/
+ *   game.config.js     ← CONFIG (SPIN_COST, RARITY_WEIGHT, ...)
+ *   slots.config.js    ← SLOT_CONFIG (WIN_THRESHOLD, PAYOUTS, ...)
+ *   coin.config.js     ← COIN_CONFIG (HOUSE_EDGE, ...)
+ *   items.js           ← ITEMS[], RARITY_LABEL, RARITY_COLOR
+ *   ui-text.js         ← UI_TEXT (все строки интерфейса)
+ *
+ * store/  (zustand)
+ *   useGameStore.js    ← balance, stats, history, sound, save/load
+ *   useCaseStore.js    ← isSpinning, stripItems, lastFinalX
+ *   useSlotsStore.js   ← isSlotSpinning, slotBet, reelState
+ *   useCoinStore.js    ← coinFlipping, coinBet, playerChoice, streak
+ *
+ * hooks/
+ *   useSave.js         ← loadSave, writeSave, migrateSave, валидация
+ *   useAudio.js        ← AudioContext, playTone, playWinSound, playCoinFlip
+ *   useConfetti.js     ← launchConfetti
+ *   useTopup.js        ← topupToday, topupDate, updateTopupBtn, daily limit
+ *
+ * utils/
+ *   shuffle.js         ← Fisher-Yates shuffle
+ *   caseWeights.js     ← computeWeights, getPrize, buildStrip
+ *   slotRng.js         ← generateSlotResults (чистая ф-я, легко тестировать)
+ *
+ * components/
+ *   TopBar/            ← баланс, звук, кнопка сброса, топап
+ *   GameTabs/          ← переключение игр, ARIA навигация
+ *   games/
+ *     CaseGame/        ← spinRoulette, лента, пул, шансы
+ *     SlotsGame/       ← createSlotReels, spinReel (GSAP через useRef)
+ *     CoinGame/        ← flipCoin, streak, выбор стороны
+ *   ui/
+ *     HistoryPanel/
+ *     StatsPanel/
+ *     OddsPanel/
+ *     LegendaryOverlay/
+ *     ConfirmModal/
+ *     Notification/
+ *
+ * ВАЖНО ПРИ МИГРАЦИИ:
+ *   • GSAP: все gsap.to/set/fromTo → через useGSAP() хук + refs
+ *   • AudioContext: создавать в useEffect после user gesture
+ *   • localStorage: через zustand persist middleware
+ *   • Stripe-анимация кейса — самая сложная часть (~40% работы)
+ * ─────────────────────────────────────────────────────────────
+ */
 (function(){
+  // MODULE: config/game.config
   // ========== КОНФИГ ==========
   const CONFIG = {
     // Fix-1: SPIN_COST поднят с 50 до 130₽
@@ -1085,23 +59,26 @@
     START_BALANCE: 2600,    // 20 спинов на старте
     SITE_BALANCE: 10000,    // резерв казино под выплаты
     TOPUP_AMOUNT: 1300,     // пополнение = 10 спинов
+    TOPUP_DAILY_LIMIT: 5,    // #fix1: макс. пополнений в сутки (иначе игрок никогда не банкротится)
     
     RARITY_WEIGHT: { common: 55, rare: 25, epic: 12, legendary: 8 },
     
-    SPIN_DURATION: 7.5,
+    SPIN_DURATION: 4.0,       // #fix13 UX: было 7.5с — слишком долго ждать проигрыш
     SPIN_EASE_START: 'power2.inOut',
     SPIN_EASE_END: 'power3.out',
-    SWAP_DELAY: 600,
-    MIN_SPINS: 7,
-    EXTRA_SPINS: 3,
+    SWAP_DELAY: 500,           // уменьшено пропорционально SPIN_DURATION 4.0с
+    MIN_SPINS: 4,             // уменьшено пропорционально новой длительности
+    EXTRA_SPINS: 2,
     
     STRIP_COPIES: 8,
-    ITEMS_PER_COPY: 3,
+    ITEMS_PER_COPY: 10,   // карточек на копию ленты; STRIP_COPIES × ITEMS_PER_COPY = полная длина ленты
     MAX_HISTORY: 18,
     
     MAX_PAYOUT_RATIO: 0.9,
+    DAILY_BONUS: 200,         // ежедневный бонус при повторном визите
   };
 
+  // MODULE: config/slots.config
   // ========== КОНФИГ СЛОТОВ ==========
   const SLOT_CONFIG = {
     SYMBOL_HEIGHT: 150,
@@ -1124,17 +101,22 @@
     WIN_LABEL_DEFAULT: 'СЕТ',
     WIN_LABEL_PAIR: 'ПАРА',   // GD-6 fix: вынесено из хендлера в конфиг
     DEFAULT_PAYOUT_TRIPLE: 3,
+    // RTP слотов: E = WIN_THRESHOLD*(TRIPLE_SHARE*avg_triple_mult+(1-TRIPLE_SHARE)*PAIR_PAYOUT)
+    // avg_triple_mult = (10+8+5+3+3+3)/6 = 5.333
+    // WIN_THRESHOLD = 0.75 / (0.025*5.333 + 0.975*1.5) = 0.75/1.5958 ≈ 0.47 → RTP=75%
+    WIN_THRESHOLD: 0.47,
+    TRIPLE_SHARE: 0.025,      // доля тройников из выигрышных; остальное — пары
     PAIR_PAYOUT: 1.5,
     CONFETTI_WIN_THRESHOLD: 200,
     CONFETTI_BIG_THRESHOLD: 500,
   };
 
+  // MODULE: config/coin.config
   // ========== КОНФИГ ОРЁЛ/РЕШКА ==========
   const COIN_CONFIG = {
     WIN_MULTIPLIER: 2,      // x2 к ставке при выигрыше
     HOUSE_EDGE: 0.23,       // GSN-1 fix: 23% → RTP = (0.5-0.115)*2 = 77% ≈ RTP кейса/слотов
     FLIP_DURATION: 2000,    // мс анимации
-    TICK_INTERVAL: 130,     // мс между тиками звука
     TICK_COUNT: 14,         // количество тиков при броске
   };
   const ITEMS = [
@@ -1166,7 +148,26 @@
     { id: 'l4', name: 'Чаша Грааля', price: 990, rarity: 'legendary', icon: '🏆' },
   ];
 
-  const RARITY_LABEL = { common:'Common', rare:'Rare', epic:'Epic', legendary:'Legendary' };
+  // Все строки UI — в одном месте для будущей i18n/локализации
+  const RARITY_LABEL = { common:'Обычный', rare:'Редкий', epic:'Эпик', legendary:'Легенда' };
+  const UI_TEXT = {
+    spinBtn:        (cost) => `КРУТИТЬ · ${cost}₽`,
+    slotBtn:        (cost) => `🎰 КРУТИТЬ · ${cost}₽`,
+    coinBtn:        (cost) => `🪙 БРОСИТЬ · ${cost}₽`,
+    resultIdle:     '⚡ ЖМИ НА КНОПКУ',
+    resultSpin:     '🌀 ВРАЩЕНИЕ...',
+    resultNoFunds:  '😔 Недостаточно средств',
+    coinIdle:       '⚡ ВЫБЕРИ ОРЁЛ ИЛИ РЕШКУ',
+    coinFlying:     '🪙 Монета летит...',
+    eagleChosen:    '🦅 Орёл выбран — ставь и бросай!',
+    tailsChosen:    '₽ Решка выбрана — ставь и бросай!',
+    slotIdle:       '⚡ ВЫБЕРИ СТАВКУ',
+    historyEmpty:   'Пока ничего...',
+    casinoRefill:   '🏦 Казино получило инвестиции!',
+    dailyBonus:     (n) => `🎁 Ежедневный бонус: +${n}₽! Возвращайся каждый день!`,
+    topupLimit:     (n) => `⛔ Лимит пополнений: ${n} в сутки исчерпан`,
+    storageWarn:    '⚠️ Сохранение недоступно — прогресс не сохранится (режим инкогнито?)',
+  };
   const RARITY_COLOR = { common:'#7a8a9c', rare:'#2f80ed', epic:'#bb6bd9', legendary:'#f2c94c' };
   const WIN_SOUNDS = {
     legendary: [523, 659, 784, 1047],
@@ -1175,9 +176,24 @@
     common: [330],
   };
 
+  // MODULE: hooks/useSave
   // ========== ПЕРСИСТЕНТНОСТЬ ==========
   const STORAGE_KEY = 'opencase_save';
-  const SAVE_VERSION = 3; // Fix-2: версия схемы сохранения
+  const SAVE_VERSION = 4; // bumped: добавлены lastVisit, topupToday, topupDate
+
+  // #fix19: миграция сохранений между версиями — игрок не теряет прогресс при обновлении
+  function migrateSave(raw) {
+    if (!raw) return null;
+    // v3 → v4: добавляем новые поля с дефолтами
+    if (raw.version === 3) {
+      raw.version    = 4;
+      raw.lastVisit  = null;
+      raw.topupToday = 0;
+      raw.topupDate  = null;
+      return raw;
+    }
+    return null; // неизвестная версия — не мигрируем
+  }
 
   const VALID_BETS = [10, 25, 50, 100];
   const isFinPos  = v => typeof v === 'number' && isFinite(v) && v >= 0;
@@ -1211,6 +227,9 @@
       soundEnabled:  typeof raw.soundEnabled === 'boolean' ? raw.soundEnabled : true,
       slotBet:       VALID_BETS.includes(raw.slotBet) ? raw.slotBet : 25,
       coinBet:       VALID_BETS.includes(raw.coinBet) ? raw.coinBet : 25,
+      lastVisit:     typeof raw.lastVisit === 'string' ? raw.lastVisit : null,
+      topupToday:    typeof raw.topupToday === 'number' ? raw.topupToday : 0,
+      topupDate:     typeof raw.topupDate  === 'string' ? raw.topupDate  : null, // #fix1: дата последнего топапа
       stats:         validateStats(raw.stats),
     };
   }
@@ -1218,11 +237,37 @@
   function loadSave() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? validateSave(JSON.parse(raw)) : null;
+      if (!raw) return null;
+      let parsed = JSON.parse(raw);
+      // #fix19: пробуем мигрировать если версия устарела
+      if (parsed && parsed.version !== SAVE_VERSION) {
+        parsed = migrateSave(parsed);
+      }
+      return parsed ? validateSave(parsed) : null;
     } catch(e) { return null; }
   }
 
+  // #fix21: проверяем доступность localStorage один раз при старте
+  let _storageAvailable = true;
+  (function checkStorage() {
+    try {
+      localStorage.setItem('__test__', '1');
+      localStorage.removeItem('__test__');
+    } catch(e) {
+      _storageAvailable = false;
+      // покажем предупреждение после инициализации DOM
+      document.addEventListener('DOMContentLoaded', () => {
+        showNotification(UI_TEXT.storageWarn, 'error');
+      }, { once: true });
+    }
+  })();
+
+  /**
+   * Сохраняет текущее состояние игры в localStorage.
+   * В React: хук useSave — вызывать через zustand middleware или useEffect
+   */
   function writeSave() {
+    if (!_storageAvailable) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         version: SAVE_VERSION, // Fix-2: версия в каждом сохранении
@@ -1233,10 +278,14 @@
         soundEnabled,
         slotBet,
         coinBet,
+        lastVisit,
+        topupToday,
+        topupDate,
       }));
     } catch(e) {}
   }
 
+  // MODULE: store/useGameStore
   // ========== СОСТОЯНИЕ ==========
   const _save = loadSave();
   let playerBalance = _save ? _save.playerBalance : CONFIG.START_BALANCE;
@@ -1262,6 +311,11 @@
   let playerChoice = null;
   let coinFlipping = false;
   let slotBet = _save?.slotBet ?? 25; // BUG-15 fix (объявление тут, используется ниже)
+  // #fix1: счётчик топапов в сутки
+  let topupToday = _save?.topupToday ?? 0;
+  let topupDate  = _save?.topupDate  ?? null;
+  // #fix4: lastVisit теперь в основном сохранении, а не в отдельном ключе
+  let lastVisit  = _save?.lastVisit  ?? null;
 
   // ========== DOM ==========
   const $ = id => document.getElementById(id);
@@ -1294,10 +348,11 @@
   const coinCostLabel   = $('coinCostLabel');
   const coinStreakVal    = $('coinStreakVal');
   const coinStreakIcon   = $('coinStreakIcon');
-  // Fix-9: ссылки на DOM для GSAP (вместо строковых CSS-селекторов)
-  const slotMachineEl   = document.querySelector('.slot-machine');
-  const coinMachineEl   = document.querySelector('.coin-machine');
+  // Fix: используем $() как все остальные DOM-элементы (id добавлен в HTML)
+  const slotMachineEl   = $('slotMachine');
+  const coinMachineEl   = $('coinMachine');
 
+  // MODULE: components/GameTabs
   // ========== TABS ==========
   const tabs = document.querySelectorAll('.tab-button');
   const caseGame  = $('caseGame');
@@ -1328,6 +383,31 @@
     tab.addEventListener('click', () => switchTab(tab.dataset.game));
   });
 
+  // UX2-06 fix: ARIA tablist требует клавиатурной навигации стрелками
+  // Tab+Enter работал, но Arrow-клавиши — нет. Исправлено.
+  document.querySelector('.game-tabs').addEventListener('keydown', e => {
+    const tabList = Array.from(tabs);
+    const currentIdx = tabList.findIndex(t => t.getAttribute('aria-selected') === 'true');
+    let nextIdx = currentIdx;
+    if (e.key === 'ArrowRight') { nextIdx = (currentIdx + 1) % tabList.length; }
+    else if (e.key === 'ArrowLeft') { nextIdx = (currentIdx - 1 + tabList.length) % tabList.length; }
+    else if (e.key === 'Home') { nextIdx = 0; }
+    else if (e.key === 'End') { nextIdx = tabList.length - 1; }
+    else return;
+    e.preventDefault();
+    switchTab(tabList[nextIdx].dataset.game);
+    tabList[nextIdx].focus();
+  });
+
+  // Адаптивная высота символа слота (синхронизируется с CSS через MOBILE_BREAKPOINT)
+  // Объявлено ПЕРЕД createSlotReels — иначе ReferenceError при вызове getSymbolHeight()
+  const MOBILE_BREAKPOINT    = 680;  // совпадает с @media (max-width: 680px) в style.css
+  const SYMBOL_HEIGHT_MOBILE = 100;  // совпадает с .reel-symbol { height: 100px } в style.css
+  function getSymbolHeight() {
+    return window.innerWidth <= MOBILE_BREAKPOINT ? SYMBOL_HEIGHT_MOBILE : SLOT_CONFIG.SYMBOL_HEIGHT;
+  }
+
+  // MODULE: components/games/SlotsGame
   // ========== СЛОТ-МАШИНА ==========
   // slotBet объявлен выше вместе с coinBet (BUG-15 fix)
   const slotSymbols = ['🍒', '🍋', '🍊', '7️⃣', '💎', '👑'];
@@ -1383,6 +463,47 @@
   }
 
   createSlotReels();
+
+  // Генерация результата слотов с контролируемым RTP
+  // Алгоритм: сначала решаем исход, потом детерминированно выбираем символы
+  // RTP = WIN_THRESHOLD * (TRIPLE_SHARE*avg_triple + (1-TRIPLE_SHARE)*PAIR_PAYOUT) ≈ 75%
+  /**
+   * Генерирует результат слотов с контролируемым RTP.
+   * RTP ≈ 75%: WIN_THRESHOLD*(TRIPLE_SHARE*avg_triple+(1-TRIPLE_SHARE)*PAIR_PAYOUT)
+   * В React: вынести в utils/slotRng.js (чистая функция)
+   * @returns {string[]} массив из 3 символов
+   */
+  function generateSlotResults() {
+    // Детерминированный выбор случайного элемента из массива — без while-loop
+    const pick  = arr => arr[Math.floor(Math.random() * arr.length)];
+    const pickExcept = (arr, ...excluded) => {
+      const pool = arr.filter(s => !excluded.includes(s));
+      return pool.length ? pick(pool) : pick(arr); // fallback если pool пуст
+    };
+
+    const roll = Math.random();
+    if (roll < SLOT_CONFIG.WIN_THRESHOLD) {
+      const isTriple = Math.random() < SLOT_CONFIG.TRIPLE_SHARE;
+      if (isTriple) {
+        const sym = pick(slotSymbols);
+        return [sym, sym, sym];
+      } else {
+        // Пара: два совпадают, третий гарантированно отличается
+        const sym   = pick(slotSymbols);
+        const other = pickExcept(slotSymbols, sym);
+        const pos   = Math.floor(Math.random() * 3);
+        const r     = [sym, sym, sym];
+        r[pos]      = other;
+        return r;
+      }
+    } else {
+      // Проигрыш: все три разные (детерминированно через filter)
+      const s1 = pick(slotSymbols);
+      const s2 = pickExcept(slotSymbols, s1);
+      const s3 = pickExcept(slotSymbols, s1, s2);
+      return [s1, s2, s3];
+    }
+  }
 
   document.querySelectorAll('[data-slot-bet]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1454,8 +575,19 @@
 
   spinSlotBtn.addEventListener('click', async () => {
     if (isSlotSpinning) return;
+    // GD2-03 / QA2-02 fix: блокируем слоты пока крутится кейс (и наоборот)
+    if (isSpinning) {
+      showNotification('⏳ Дождись окончания спина кейса');
+      return;
+    }
+    if (coinFlipping) {
+      showNotification('⏳ Дождись броска монеты');
+      return;
+    }
     if (playerBalance < slotBet) {
       showNotification('❌ Недостаточно средств');
+      spinSlotBtn.classList.add('btn-broke'); // #fix11: визуальный сигнал
+      setTimeout(() => spinSlotBtn.classList.remove('btn-broke'), 1500);
       return;
     }
     // GD-2 fix: проверяем что казино может выплатить максимальный приз слотов
@@ -1476,15 +608,33 @@
     stats.totalSpent += slotBet;
     stats.slotsSpent = (stats.slotsSpent || 0) + slotBet;
     updateBalances(true);
+    writeSave(); // #fix5: сохраняем списание ДО анимации — закрытие вкладки не потеряет ставку
 
-    const results = Array.from({ length: 3 }, () => slotSymbols[Math.floor(Math.random() * slotSymbols.length)]);
-    slotResult.innerHTML = '🌀 ВРАЩЕНИЕ...';
+    // #fix2: контролируемый RTP слотов через WIN_THRESHOLD
+    // Вместо честного random определяем сначала: будет ли выигрыш, затем какой символ
+    const results = generateSlotResults();
+    slotResult.innerHTML = UI_TEXT.resultSpin;
 
     let win = 0;
     try { // Fix-3: try/finally гарантирует разблокировку кнопки при любом исходе
       const targetIndices = await Promise.all(
         reelStrips.map((strip, i) => spinReel(strip, results[i], SLOT_CONFIG.REEL_DURATIONS[i], reelSymbolSequences[i]))
       );
+
+      // GSN2-04 fix: Near-miss анимация — один из сильнейших retention-инструментов в слотах
+      // При паре: shake на барабане с несовпавшим символом + текст "Почти!"
+      const hasPair = results[0] === results[1] || results[1] === results[2] || results[0] === results[2];
+      const hasTriple = results[0] === results[1] && results[1] === results[2];
+      if (hasPair && !hasTriple) {
+        // Найти несовпавший барабан
+        let mismatchReel = null;
+        if (results[0] === results[1] && results[1] !== results[2]) mismatchReel = reels[2];
+        else if (results[1] === results[2] && results[0] !== results[1]) mismatchReel = reels[0];
+        else if (results[0] === results[2] && results[0] !== results[1]) mismatchReel = reels[1];
+        if (mismatchReel) {
+          gsap.fromTo(mismatchReel, { x: 0 }, { x: 6, duration: 0.08, repeat: 5, yoyo: true, delay: 0.2 });
+        }
+      }
 
       let winType = '';
 
@@ -1497,7 +647,7 @@
         winLine.classList.add('active');
         gsap.fromTo(slotMachineEl, { scale: 1 }, { scale: 1.02, duration: 0.2, repeat: 3, yoyo: true });
       } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
-        win = Math.round(slotBet * SLOT_CONFIG.PAIR_PAYOUT);
+        win = Math.floor(slotBet * SLOT_CONFIG.PAIR_PAYOUT); // GD2-06 fix: Math.floor вместо Math.round для детерминированного поведения
         winType = SLOT_CONFIG.WIN_LABEL_PAIR;
         winLine.classList.remove('active');
         void winLine.offsetWidth;
@@ -1522,8 +672,10 @@
         playWinSound(winRarity);
         if (win > SLOT_CONFIG.CONFETTI_WIN_THRESHOLD) launchConfetti(40);
         if (win > SLOT_CONFIG.CONFETTI_BIG_THRESHOLD) launchConfetti(80);
-        setTimeout(() => { winLine.classList.remove('active'); }, 1000);
+        // GSN2-06 fix: увеличено с 1000мс до 2500мс — игрок успевает прочитать результат
+        setTimeout(() => { winLine.classList.remove('active'); }, 2500);
       } else {
+        // #fix9: убрана мёртвая ветка 'ПОЧТИ' — пара всегда win>0, else = всегда проигрыш
         slotResult.innerHTML = '😔 ПРОИГРЫШ';
         playLossSound();
         gsap.fromTo(slotMachineEl, { x: 0 }, { x: 5, duration: 0.1, repeat: 5, yoyo: true });
@@ -1551,6 +703,7 @@
     }
   });
 
+  // MODULE: components/games/CoinGame
   // ========== ОРЁЛ И РЕШКА ==========
   document.querySelectorAll('[data-coin-bet]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1570,7 +723,7 @@
     $('chooseEagle').classList.add('active');
     $('chooseEagle').setAttribute('aria-pressed', 'true');
     playerChoice = 'eagle';
-    coinResultEl.innerHTML = '🦅 Выбран орёл — ставь и бросай!';
+    coinResultEl.innerHTML = UI_TEXT.eagleChosen;
   });
 
   $('chooseTails').addEventListener('click', () => {
@@ -1582,7 +735,7 @@
     $('chooseTails').classList.add('active');
     $('chooseTails').setAttribute('aria-pressed', 'true');
     playerChoice = 'tails';
-    coinResultEl.innerHTML = '₽ Выбрана решка — ставь и бросай!';
+    coinResultEl.innerHTML = UI_TEXT.tailsChosen;
   });
 
   flipCoinBtn.addEventListener('click', () => {
@@ -1599,6 +752,8 @@
     }
     if (playerBalance < coinBet) {
       showNotification('❌ Недостаточно средств');
+      flipCoinBtn.classList.add('btn-broke'); // #fix11
+      setTimeout(() => flipCoinBtn.classList.remove('btn-broke'), 1500);
       return;
     }
 
@@ -1618,7 +773,7 @@
     const result = Math.random() < (0.5 - COIN_CONFIG.HOUSE_EDGE / 2) ? playerChoice : (playerChoice === 'eagle' ? 'tails' : 'eagle');
     const win = result === playerChoice;
 
-    coinResultEl.innerHTML = '🪙 Монета летит...';
+    coinResultEl.innerHTML = UI_TEXT.coinFlying;
 
     // Анимация монеты
     coinEl.classList.remove('flipping');
@@ -1634,8 +789,11 @@
       gsap.set(coinEl, { rotateY: result === 'tails' ? 180 : 0 });
 
       let winAmount = 0;
-      if (result === 'eagle') stats.eagleWins = (stats.eagleWins || 0) + 1;
-      else stats.tailsWins = (stats.tailsWins || 0) + 1;
+      // Fix: считаем победы игрока по его выбору, а не сторону монеты
+      if (win) {
+        if (playerChoice === 'eagle') stats.eagleWins = (stats.eagleWins || 0) + 1;
+        else stats.tailsWins = (stats.tailsWins || 0) + 1;
+      }
 
       // Fix-5: наглядный фидбек — правильная кнопка зеленеет, неверная краснеет
       const eagleBtn = $('chooseEagle');
@@ -1651,13 +809,18 @@
         chosenBtn.classList.add('result-loss');
         otherBtn.classList.add('result-win');
       }
-      // UX-3 fix: через 2.5 сек возвращаем кнопки в нейтральное состояние
-      // и восстанавливаем подсветку выбора игрока
+      // #fix18 UX: убираем цвет результата через 2.5с и сразу восстанавливаем выбор игрока
+      // playerChoice сохраняется между бросками — не нужно выбирать заново каждый раз
       setTimeout(() => {
         chosenBtn.classList.remove('result-win', 'result-loss');
         otherBtn.classList.remove('result-win', 'result-loss');
-        if (playerChoice) {
-          chosenBtn.classList.add('active');
+        // Восстанавливаем подсветку текущего выбора игрока
+        if (playerChoice === 'eagle') {
+          $('chooseEagle').classList.add('active');
+          $('chooseTails').classList.remove('active');
+        } else if (playerChoice === 'tails') {
+          $('chooseTails').classList.add('active');
+          $('chooseEagle').classList.remove('active');
         }
       }, 2500);
 
@@ -1701,6 +864,11 @@
       coinFlipping = false;
       setButtonLoading(flipCoinBtn, false);
       document.querySelectorAll('.choice-btn').forEach(b => b.style.pointerEvents = 'auto');
+      // #fix18: обновляем лейбл кнопки — показываем текущий выбор для следующего броска
+      if (playerChoice) {
+        const choiceLbl = playerChoice === 'eagle' ? '🦅 Орёл выбран' : '₽ Решка выбрана';
+        setTimeout(() => { if (!coinFlipping) coinResultEl.textContent = choiceLbl + ' — ставь и бросай!'; }, 2600);
+      }
     }, COIN_CONFIG.FLIP_DURATION);
   });
 
@@ -1711,10 +879,16 @@
     coinStreakVal.style.color = s > 0 ? '#4caf50' : s < 0 ? '#f44336' : 'var(--gold)';
   }
 
+  // MODULE: hooks/useAudio
   // ========== АУДИО ==========
   function getAudio() {
     if (!audioCtx && soundEnabled) {
       try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    // GD2-04 / QA2-05 fix: Chrome/Safari создают AudioContext в suspended state,
+    // первые звуки молчат если не вызвать resume() после user gesture
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
     }
     return audioCtx;
   }
@@ -1766,17 +940,20 @@
   // GD-4 fix: тики синхронизированы с максимальной длительностью барабана (3.5 сек)
   // Интервал постепенно увеличивается — имитирует замедление вращения
   let _slotTickTimer = null;
+  let _ticksRunning = false; // GD2-02 / QA2-03 fix: флаг для race condition
   function startSlotTicks() {
     if (!soundEnabled) return;
+    _ticksRunning = true;
     const totalDuration = Math.max(...SLOT_CONFIG.REEL_DURATIONS) * 1000; // 3500мс
     const totalTicks = 38;
     let tickIdx = 0;
     function scheduleNext() {
-      if (tickIdx >= totalTicks) return;
+      if (tickIdx >= totalTicks || !_ticksRunning) return; // проверяем флаг
       const progress = tickIdx / totalTicks;
       // Интервал от 50мс (быстро в начале) до 200мс (медленно в конце)
       const interval = 50 + Math.round(150 * progress * progress);
       _slotTickTimer = setTimeout(() => {
+        if (!_ticksRunning) return; // повторная проверка внутри callback
         const freq = 350 - 80 * progress + Math.random() * 50;
         playTone(freq, 'triangle', 0.08 - 0.03 * progress, 0.06);
         tickIdx++;
@@ -1786,11 +963,18 @@
     scheduleNext();
   }
   function stopSlotTicks() {
+    _ticksRunning = false; // GD2-02 fix: сначала флаг, потом clearTimeout
     clearTimeout(_slotTickTimer);
     _slotTickTimer = null;
   }
 
+  // MODULE: hooks/useConfetti
   // ========== КОНФЕТТИ ==========
+  /**
+   * Запускает конфетти-эффект.
+   * В React: хук useConfetti, DOM-манипуляции через ref на confetti-container
+   * @param {number} amount количество элементов (макс. 200 суммарно)
+   */
   function launchConfetti(amount = 60) {
     // BUG-16 fix: лимит на количество элементов в DOM
     const existing = confettiCont.children.length;
@@ -1814,21 +998,28 @@
     }
   }
 
-  // GSN-2: fullscreen wow-экран для легендарного дропа
   function showLegendaryOverlay(item, onClose) {
     const overlay = document.createElement('div');
     overlay.className = 'legendary-overlay';
+    // Fix: используем textContent для динамических данных — защита от XSS как в showConfirmModal
     overlay.innerHTML = `
-      <div class="legendary-badge">✦ ЛЕГЕНДАРНЫЙ ДРО П ✦</div>
-      <div class="legendary-icon-big">${item.icon}</div>
-      <div class="legendary-name">${item.name}</div>
-      <div class="legendary-price">+${item.price}₽</div>
+      <div class="legendary-badge">✦ ЛЕГЕНДАРНЫЙ ДРОП ✦</div>
+      <div class="legendary-icon-big"></div>
+      <div class="legendary-name"></div>
+      <div class="legendary-price"></div>
       <div class="legendary-tap">нажмите чтобы продолжить</div>
     `;
+    overlay.querySelector('.legendary-icon-big').textContent = item.icon;
+    overlay.querySelector('.legendary-name').textContent = item.name;
+    overlay.querySelector('.legendary-price').textContent = `+${item.price}₽`;
     document.body.appendChild(overlay);
     launchConfetti(120);
-    // Закрытие по клику или по таймауту 5 сек
+    // GD2-01 / QA2-01 fix: guard против двойного вызова onClose()
+    // (click + setTimeout оба вызывали close — stats.totalSpins++ дважды)
+    let _overlayDone = false;
     const close = () => {
+      if (_overlayDone) return;
+      _overlayDone = true;
       overlay.classList.add('leaving');
       setTimeout(() => { overlay.remove(); onClose(); }, 500);
     };
@@ -1836,6 +1027,7 @@
     setTimeout(close, 5000);
   }
 
+  // MODULE: components/ui/helpers
   // ========== UI HELPERS ==========
   function setButtonLoading(btn, loading) {
     if (loading) {
@@ -1847,6 +1039,7 @@
     }
   }
 
+  // MODULE: components/ui/Notification
   // ========== УВЕДОМЛЕНИЯ ==========
   let _activeNotif = null;
   function showNotification(text, type = 'default') {
@@ -1870,6 +1063,7 @@
     }, 2800);
   }
 
+  // MODULE: store/useGameStore (balance)
   // ========== БАЛАНС ==========
   let _prevPlayer = playerBalance;
   let _prevSite = siteBalance;
@@ -1904,7 +1098,9 @@
     div.className = 'balance-float ' + (delta > 0 ? 'positive' : 'negative');
     div.textContent = (delta > 0 ? '+' : '') + delta + '₽';
     div.style.left = (rect.left + rect.width / 2) + 'px';
-    div.style.top = (rect.top + window.scrollY) + 'px';
+    // DEV2-02 / QA2-04 fix: position:fixed использует viewport-координаты,
+    // window.scrollY добавлять НЕ нужно — float уплывал вниз при прокрутке
+    div.style.top = rect.top + 'px';
     document.body.appendChild(div);
     div.addEventListener('animationend', () => div.remove());
   }
@@ -1913,16 +1109,20 @@
   const CASINO_REFILL_THRESHOLD = 1000;
   const CASINO_REFILL_AMOUNT    = 8000;
 
+  let _refillScheduled = false; // #fix3: предотвращает несколько рефиллов за одну сессию событий
   function checkCasinoRefill() {
+    if (_refillScheduled) return;
     if (siteBalance < CASINO_REFILL_THRESHOLD && !isSpinning && !isSlotSpinning && !coinFlipping) {
+      _refillScheduled = true;
       const prev = siteBalance;
       siteBalance += CASINO_REFILL_AMOUNT;
       animateCounter(siteSpan, prev, siteBalance, 1200);
       _prevSite = siteBalance;
-      showNotification('🏦 Казино получило инвестиции!', 'success');
+      showNotification(UI_TEXT.casinoRefill, 'success');
       renderOdds();
       renderPool();
       writeSave();
+      setTimeout(() => { _refillScheduled = false; }, 5000); // сброс флага через 5с
     }
   }
 
@@ -1952,6 +1152,7 @@
     }
   }
 
+  // MODULE: store/useGameStore (history)
   // ========== ИСТОРИЯ ==========
   function addHistory(item) {
     winHistory.unshift(item);
@@ -1961,7 +1162,7 @@
 
   function renderHistory() {
     if (!winHistory.length) {
-      historyList.innerHTML = '<span class="history-empty">Пока ничего...</span>';
+      historyList.innerHTML = `<span class="history-empty">${UI_TEXT.historyEmpty}</span>`;
       return;
     }
     const srcLabel = { case: 'КЕЙ', slot: 'СЛ', coin: 'МОН' };
@@ -1971,11 +1172,13 @@
       const src = `<span class="src">${srcLabel[it.source] || '?'}</span>`;
       const priceStr = it.price > 0 ? `+${it.price}₽` : '—';
       // GSN-4: для кейса показываем имя предмета в title атрибуте и коротко в чипе
-      const nameAttr = it.name ? ` title="${it.name}"` : '';
+      // DEV2-04 fix: используем JSON.stringify для экранирования имени в атрибуте
+      const nameAttr = it.name ? ` title="${it.name.replace(/"/g, '&quot;')}"` : '';
       return `<div class="history-chip ${cls}"${nameAttr}>${it.icon}${src} ${priceStr}</div>`;
     }).join('');
   }
 
+  // MODULE: store/useGameStore (stats)
   // ========== СТАТИСТИКА ==========
   function rtpStr(spent, won) {
     if (!spent) return '—';
@@ -1995,6 +1198,7 @@
     totalWonEl.textContent = stats.totalWon + '₽';
     $('statEagle').textContent = stats.eagleWins || 0;
     $('statTails').textContent = stats.tailsWins || 0;
+    $('statStreakBest').textContent = stats.coinStreakBest || 0;
     const rS = stats.totalSpent, rW = stats.totalWon;
     rtpEl.textContent = rtpStr(rS, rW);
     rtpEl.style.color = rtpColor(rS, rW);
@@ -2008,7 +1212,14 @@
     mRtp.style.color = rtpColor(stats.coinSpent,  stats.coinWon);
   }
 
+  // MODULE: components/games/CaseGame (strip)
   // ========== ЛЕНТА КЕЙСА ==========
+  /**
+   * Fisher-Yates shuffle — используется в buildStrip и createSlotReels.
+   * В React: вынести в utils/shuffle.js
+   * @param {Array} arr
+   * @returns {Array} перемешанный массив (новый)
+   */
   function shuffle(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -2029,7 +1240,7 @@
     }));
     const totalW = itemWeights.reduce((s, p) => s + p.w, 0);
 
-    const STRIP_LENGTH = CONFIG.STRIP_COPIES * 10;
+    const STRIP_LENGTH = CONFIG.STRIP_COPIES * CONFIG.ITEMS_PER_COPY;
     const result = [];
     for (let i = 0; i < STRIP_LENGTH; i++) {
       let r = Math.random() * totalW;
@@ -2085,6 +1296,7 @@
     itemsStrip.innerHTML = stripItems.map(cardHTML).join('');
     buildStripMap();
     gsap.set(itemsStrip, { x: liveX });
+    _lastFinalX = null; // Fix: старая позиция недействительна после перестройки ленты
   }
 
   function centerStrip() {
@@ -2114,13 +1326,14 @@
     });
   }
 
-  // Адаптивная высота символа слота (синхронизируется с CSS)
-  function getSymbolHeight() {
-    return window.innerWidth <= 680 ? 100 : SLOT_CONFIG.SYMBOL_HEIGHT;
-  }
-
+  // MODULE: components/games/CaseGame (prize logic)
   // ========== РАСЧЕТ ПРИЗА ==========
   // Fix-8: getPrize теперь переиспользует computeWeights — нет дублирования countByRarity
+  /**
+   * Выбирает приз методом взвешенной случайности с учётом баланса казино.
+   * В React: вынести в utils/caseWeights.js
+   * @returns {Object} item из ITEMS
+   */
   function getPrize() {
     const { pool, totalW } = computeWeights();
 
@@ -2140,7 +1353,14 @@
     return available[available.length - 1].item;
   }
 
+  // MODULE: components/games/CaseGame (weights)
   // ========== ОБЩИЙ РАСЧЁТ ВЕСОВ ==========
+  /**
+   * Вычисляет веса предметов с учётом баланса казино.
+   * Дорогие предметы блокируются если казино не может выплатить.
+   * В React: вынести в utils/caseWeights.js (чистая функция, зависит только от siteBalance)
+   * @returns {{ pool, totalW, byRarity, totalRarity }}
+   */
   function computeWeights() {
     const maxPayout = siteBalance * CONFIG.MAX_PAYOUT_RATIO;
     const countByRarity = ITEMS.reduce((acc, it) => {
@@ -2178,25 +1398,47 @@
     return { pool, totalW, byRarity, totalRarity };
   }
 
+  // MODULE: components/games/CaseGame (pool render)
   // ========== ОТОБРАЖЕНИЕ ПУЛА ==========
   function renderPool() {
     const { pool, totalW } = computeWeights();
     const sorted = [...pool].sort((a, b) => b.item.price - a.item.price);
     const poolGrid = $('poolGrid');
 
-    poolGrid.innerHTML = sorted.map(({ item, w, isBlocked }) => {
+    // #fix23: используем DOM API вместо innerHTML для item.name — защита от XSS
+    poolGrid.innerHTML = '';
+    sorted.forEach(({ item, w, isBlocked }) => {
       const pct = totalW > 0 ? (w / totalW * 100) : 0;
-      return `<div class="pool-card ${item.rarity}${isBlocked ? ' blocked' : ''}">
-        <div class="pool-card-badge">${RARITY_LABEL[item.rarity]}</div>
-        ${isBlocked ? '<div class="pool-card-lock">🔒</div>' : ''}
-        <div class="pool-card-icon">${item.icon}</div>
-        <div class="pool-card-name">${item.name}</div>
-        <div class="pool-card-price">${item.price}₽</div>
-        <div class="pool-card-chance">${pct.toFixed(1)}%</div>
-      </div>`;
-    }).join('');
+      const card = document.createElement('div');
+      card.className = `pool-card ${item.rarity}${isBlocked ? ' blocked' : ''}`;
+      const badge = document.createElement('div');
+      badge.className = 'pool-card-badge';
+      badge.textContent = RARITY_LABEL[item.rarity];
+      card.appendChild(badge);
+      if (isBlocked) {
+        const lock = document.createElement('div');
+        lock.className = 'pool-card-lock';
+        lock.textContent = '🔒';
+        card.appendChild(lock);
+      }
+      const icon = document.createElement('div');
+      icon.className = 'pool-card-icon';
+      icon.textContent = item.icon;
+      const name = document.createElement('div');
+      name.className = 'pool-card-name';
+      name.textContent = item.name;
+      const price = document.createElement('div');
+      price.className = 'pool-card-price';
+      price.textContent = item.price + '₽';
+      const chance = document.createElement('div');
+      chance.className = 'pool-card-chance';
+      chance.textContent = pct.toFixed(1) + '%';
+      card.append(icon, name, price, chance);
+      poolGrid.appendChild(card);
+    });
   }
 
+  // MODULE: components/games/CaseGame (odds render)
   // ========== ОТОБРАЖЕНИЕ ШАНСОВ ==========
   function renderOdds() {
     const { byRarity, totalRarity } = computeWeights();
@@ -2214,6 +1456,10 @@
     }).join('');
   }
 
+  /**
+   * Основной игровой цикл кейса: списание ставки → анимация → выдача приза.
+   * В React: хук useCaseSpin, GSAP-анимации через useRef
+   */
   function spinRoulette() {
     if (isSpinning) return;
     if (!itemWidth) {
@@ -2222,15 +1468,21 @@
       return;
     }
     if (playerBalance < CONFIG.SPIN_COST) {
-      resultDiv.innerHTML = '😔 Недостаточно средств';
+      resultDiv.innerHTML = UI_TEXT.resultNoFunds;
       return;
     }
     _lastFinalX = null;
 
+    // #fix6: clamp playerBalance — гонка двух вкладок не уведёт в минус
+    if (playerBalance < CONFIG.SPIN_COST) {
+      resultDiv.innerHTML = '😔 Недостаточно средств';
+      return;
+    }
     playerBalance -= CONFIG.SPIN_COST;
     siteBalance += CONFIG.SPIN_COST;
     stats.totalSpent += CONFIG.SPIN_COST;
     stats.caseSpent = (stats.caseSpent || 0) + CONFIG.SPIN_COST;
+    playerBalance = Math.max(0, playerBalance); // clamp
     updateBalances(true);
 
     // Fix-1: приз выбирается ПОСЛЕ списания ставки — maxPayout считается по актуальному
@@ -2239,7 +1491,7 @@
 
     isSpinning = true;
     setButtonLoading(spinBtn, true);
-    resultDiv.innerHTML = '🌀 ВРАЩЕНИЕ...';
+    resultDiv.innerHTML = UI_TEXT.resultSpin;
 
     // Убираем подсветку, НО не перестраиваем ленту прямо сейчас
     document.querySelectorAll('.item-card.win-highlight').forEach(c => {
@@ -2339,7 +1591,8 @@
             isSpinning = false;
             setButtonLoading(spinBtn, false);
             currentAnim = null;
-            updateBalances();
+            // GD2-08 fix: убираем второй updateBalances() — баланс уже обновлён
+            // до showLegendaryOverlay, повторный вызов перезаписывал числа без анимации
             _lastFinalX = finalTargetX;
           });
           return; // финиш будет вызван из оверлея
@@ -2369,18 +1622,57 @@
           return ((v % stripW) - stripW) % stripW;
         }),
       },
-      onComplete: onSpinDone,
+      onComplete: () => {
+        try {
+          onSpinDone();
+        } catch(err) {
+          // DEV2-01 fix: если onSpinDone упала — сбрасываем состояние чтобы не залипнуть
+          console.error('spinRoulette onComplete error:', err);
+          playerBalance += CONFIG.SPIN_COST;
+          siteBalance = Math.max(0, siteBalance - CONFIG.SPIN_COST);
+          stats.totalSpent -= CONFIG.SPIN_COST;
+          stats.caseSpent = Math.max(0, (stats.caseSpent || 0) - CONFIG.SPIN_COST);
+          updateBalances(true);
+          resultDiv.innerHTML = '⚠️ Ошибка — ставка возвращена';
+          isSpinning = false;
+          setButtonLoading(spinBtn, false);
+          currentAnim = null;
+        }
+      },
     });
   }
 
   // ========== ОБРАБОТЧИКИ ==========
   spinBtn.addEventListener('click', () => spinRoulette());
 
+  let _lastTopup = 0;
   topupBtn.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - _lastTopup < 500) return; // антиспам 500мс
+    _lastTopup = now;
+    // #fix1: лимит пополнений в сутки
+    const today = new Date().toDateString();
+    if (topupDate !== today) { topupDate = today; topupToday = 0; }
+    if (topupToday >= CONFIG.TOPUP_DAILY_LIMIT) {
+      showNotification(UI_TEXT.topupLimit(CONFIG.TOPUP_DAILY_LIMIT), 'error');
+      return;
+    }
+    topupToday++;
     playerBalance += CONFIG.TOPUP_AMOUNT;
     updateBalances(true);
+    updateTopupBtn();
     writeSave();
   });
+
+  function updateTopupBtn() {
+    const today = new Date().toDateString();
+    if (topupDate !== today) topupToday = 0;
+    const remaining = CONFIG.TOPUP_DAILY_LIMIT - topupToday;
+    topupBtn.disabled = remaining <= 0;
+    topupBtn.title = remaining > 0 ? `Осталось пополнений сегодня: ${remaining}` : 'Лимит пополнений исчерпан';
+    const lbl = $('topupLabel');
+    if (lbl) lbl.textContent = CONFIG.TOPUP_AMOUNT;
+  }
 
   soundToggle.addEventListener('click', () => {
     soundEnabled = !soundEnabled;
@@ -2397,16 +1689,20 @@
   function showConfirmModal(message, onConfirm) {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
-    overlay.innerHTML = `
-      <div class="confirm-box">
-        <div class="confirm-icon">⚠️</div>
-        <div class="confirm-message">${message}</div>
-        <div class="confirm-btns">
-          <button class="_confirmYes confirm-yes">ДА</button>
-          <button class="_confirmNo  confirm-no">ОТМЕНА</button>
-        </div>
+    // DEV2-03 fix: используем textContent вместо innerHTML для confirm-message
+    // чтобы исключить XSS если message когда-либо придёт из внешнего источника
+    const box = document.createElement('div');
+    box.className = 'confirm-box';
+    box.innerHTML = `
+      <div class="confirm-icon">⚠️</div>
+      <div class="confirm-message"></div>
+      <div class="confirm-btns">
+        <button class="_confirmYes confirm-yes">ДА</button>
+        <button class="_confirmNo  confirm-no">ОТМЕНА</button>
       </div>
     `;
+    box.querySelector('.confirm-message').textContent = message;
+    overlay.appendChild(box);
     document.body.appendChild(overlay);
     overlay.querySelector('._confirmYes').addEventListener('click', () => { overlay.remove(); onConfirm(); });
     overlay.querySelector('._confirmNo').addEventListener('click',  () => overlay.remove());
@@ -2439,6 +1735,9 @@
       // Fix-4: сбрасываем slotBet наравне с coinBet
       slotBet = 25;
       coinBet = 25;
+      topupToday = 0; // #fix1: сбрасываем счётчик топапов
+      topupDate  = null;
+      lastVisit  = null; // #fix4: сбрасываем дату визита вместе с прогрессом
       _lastFinalX = null;
       document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('active'));
       // Fix-4: переключаем кнопки ставок слотов на дефолт
@@ -2452,7 +1751,8 @@
       slotCostLabel.textContent = slotBet;
       coinCostLabel.textContent = coinBet;
       gsap.set(coinEl, { rotateY: 0 });
-      coinResultEl.innerHTML = '⚡ ВЫБЕРИ ОРЁЛ ИЛИ РЕШКУ';
+      coinResultEl.innerHTML = UI_TEXT.coinIdle;
+      updateTopupBtn();
       updateCoinStreak();
       try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
       updateBalances();
@@ -2489,7 +1789,11 @@
         const newH = getSymbolHeight();
         if (newH !== _lastSymbolHeight) {
           _lastSymbolHeight = newH;
-          createSlotReels();
+          // QA2-06 fix: не пересоздаём барабаны во время слот-анимации
+          // (GSAP теряет целевой элемент если reelStrips пересоздаются во время spinReel)
+          if (!isSlotSpinning) {
+            createSlotReels();
+          }
         }
       }
     }, 150);
@@ -2500,13 +1804,31 @@
     setTimeout(handleResize, 200);
   });
 
-  // ========== ИНИЦИАЛИЗАЦИЯ ==========
+  // Ежедневный бонус: сравниваем lastVisit (state) с сегодня
+  // lastVisit=null → первый запуск → бонус не выдаём, просто запоминаем дату
+  // lastVisit='вчера' → новый день → выдаём бонус
+  function checkDailyBonus() {
+    const today = new Date().toDateString();
+    if (lastVisit === today) return; // уже были сегодня
+    const isReturn = lastVisit !== null; // не первый запуск
+    lastVisit = today;
+    if (isReturn) {
+      const bonus = CONFIG.DAILY_BONUS;
+      playerBalance += bonus;
+      updateBalances(true);
+      showNotification(UI_TEXT.dailyBonus(bonus), 'success');
+    }
+    writeSave();
+  }
+
   function init() {
+    checkDailyBonus();
     topupLabel.textContent = CONFIG.TOPUP_AMOUNT;
     spinCostLabel.textContent = CONFIG.SPIN_COST;
     slotCostLabel.textContent = slotBet;
     coinCostLabel.textContent = coinBet;
     soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+    updateTopupBtn();
     _prevPlayer = playerBalance;
     _prevSite   = siteBalance;
     updateCoinStreak();
@@ -2534,6 +1856,25 @@
     });
   }
 
+  // QA2-07 fix: синхронизация между двумя открытыми вкладками
+  // (раньше last-write-wins вызывал непредсказуемые балансы)
+  window.addEventListener('storage', e => {
+    if (e.key === STORAGE_KEY && !isSpinning && !isSlotSpinning && !coinFlipping) {
+      const fresh = loadSave();
+      if (fresh) {
+        playerBalance = fresh.playerBalance;
+        siteBalance   = fresh.siteBalance;
+        stats         = fresh.stats;
+        winHistory    = fresh.winHistory;
+        _prevPlayer   = playerBalance;
+        _prevSite     = siteBalance;
+        updateBalances();
+        renderStats();
+        renderHistory();
+      }
+    }
+  });
+
   // QA-4 fix: очищаем конфетти при уходе вкладки в фон — animationend не стреляет
   // в фоновых вкладках, поэтому DOM-элементы накапливались до лимита 200
   document.addEventListener('visibilitychange', () => {
@@ -2542,6 +1883,3 @@
 
   init();
 })();
-</script>
-</body>
-</html>
