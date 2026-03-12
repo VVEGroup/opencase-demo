@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
   <title>OpenCase · Казино</title>
+  <!-- DEV-4: meta description -->
+  <meta name="description" content="OpenCase — браузерное казино: кейс, слоты и орёл/решка. Без регистрации, без установки.">
+  <!-- UX-5: Open Graph для share-превью -->
+  <meta property="og:title"       content="OpenCase · Казино">
+  <meta property="og:description" content="Кейс, слоты и орёл/решка прямо в браузере. Без регистрации.">
+  <meta property="og:type"        content="website">
+  <!-- DEV-3: inline SVG favicon — без сетевых запросов -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
   <!-- Fix-10: preconnect + link вместо блокирующего @import в CSS -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -472,6 +480,22 @@
     .history-panel { flex: 1 1 300px; }
     .stats-panel { flex: 1 1 300px; }
     .odds-panel { flex: 0 1 220px; }
+
+    /* UX-4 fix: на мобильных вместо вертикального стека — горизонтальный скролл-ряд.
+       Каждая панель фиксированной ширины, всё прокручивается без увеличения высоты страницы */
+    @media (max-width: 680px) {
+      .bottom-row {
+        flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch; padding-bottom: 8px;
+        scrollbar-width: thin; scrollbar-color: #2e3540 transparent;
+      }
+      .bottom-row::-webkit-scrollbar { height: 4px; }
+      .bottom-row::-webkit-scrollbar-thumb { background: #2e3540; border-radius: 2px; }
+      .history-panel, .stats-panel, .odds-panel {
+        flex: 0 0 85vw; max-width: 320px;
+        scroll-snap-align: start; min-width: 240px;
+      }
+    }
     
     .panel-title {
       font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px;
@@ -739,10 +763,123 @@
       .slot-reels { gap: 5px; }
       .reel-container { max-width: 80px; }
       .reel-symbol { height: 100px; font-size: 2.5rem; }
+      /* UX-1 fix: reel-window должен совпадать с высотой символа на мобильных */
+      .reel-window { height: 100px; }
       .coin-arena { width: 160px; height: 160px; }
       .coin-face { font-size: 4rem; }
       .choice-btn { width: 100px; height: 100px; font-size: 1.1rem; }
       .choice-btn .choice-icon { font-size: 2.2rem; }
+    }
+
+    /* GSN-3: Таблица выплат / шансов */
+    .payout-table {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 14px; margin-top: 14px; padding: 0;
+      overflow: hidden;
+    }
+    .payout-table summary {
+      padding: 10px 16px; cursor: pointer; font-size: 0.82rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-muted); list-style: none; user-select: none;
+    }
+    .payout-table summary:hover { color: var(--gold); }
+    .payout-grid { padding: 4px 16px 12px; }
+    .payout-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 5px 0; border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .payout-row:last-child { border-bottom: none; }
+    .payout-row > span:first-child { flex: 1; color: var(--text); font-size: 1rem; }
+    .payout-mult { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--gold); min-width: 40px; text-align: right; }
+    .payout-label { color: var(--text-muted); font-size: 0.75rem; min-width: 90px; text-align: right; }
+    .payout-note { color: var(--text-muted) !important; font-size: 0.72rem; font-style: italic; }
+    .coin-odds-note {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 14px; margin-top: 14px; padding: 10px 16px;
+      font-size: 0.82rem; color: var(--text-muted); line-height: 1.6;
+    }
+    .coin-odds-note b { color: var(--gold); }
+
+    /* DEV-5: confirm modal — CSS вместо inline styles */
+    .confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 99999; backdrop-filter: blur(6px);
+      animation: gameFadeIn 0.2s ease-out;
+    }
+    .confirm-box {
+      background: #0f1215; border: 1px solid #ffd96660; border-radius: 24px;
+      padding: 28px 32px; max-width: 340px; width: 90%; text-align: center;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+      animation: modalFadeIn 0.22s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+    .confirm-icon    { font-size: 2rem; margin-bottom: 12px; }
+    .confirm-message { color: #e8edf4; font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; }
+    .confirm-btns    { display: flex; gap: 10px; justify-content: center; }
+    .confirm-yes {
+      background: linear-gradient(150deg,#f7dc55,#d4a020); border: none;
+      color: #1a1505; font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem; letter-spacing: 2px; padding: 10px 28px;
+      border-radius: 50px; cursor: pointer;
+    }
+    .confirm-yes:hover { filter: brightness(1.08); }
+    .confirm-no {
+      background: #1a1f28; border: 1px solid #2e3540; color: #7a8a9c;
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem;
+      letter-spacing: 2px; padding: 10px 28px; border-radius: 50px; cursor: pointer;
+    }
+    .confirm-no:hover { border-color: #7a8a9c; color: #e8edf4; }
+
+    .legendary-overlay {
+      position: fixed; inset: 0; z-index: 99990;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at center, #3a2a0088 0%, #000000ee 100%);
+      backdrop-filter: blur(4px);
+      animation: legendaryFadeIn 0.4s ease-out forwards;
+      cursor: pointer;
+    }
+    @keyframes legendaryFadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    .legendary-overlay.leaving {
+      animation: legendaryFadeOut 0.5s ease-in forwards;
+    }
+    @keyframes legendaryFadeOut {
+      from { opacity: 1; } to { opacity: 0; }
+    }
+    .legendary-badge {
+      font-size: 0.9rem; font-weight: 800; letter-spacing: 4px;
+      color: #ffd966; text-transform: uppercase;
+      text-shadow: 0 0 30px #ffd966; margin-bottom: 10px;
+      animation: legendaryPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes legendaryPulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.6; }
+    }
+    .legendary-icon-big {
+      font-size: 8rem; line-height: 1;
+      filter: drop-shadow(0 0 40px #ffd96688);
+      animation: legendaryBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes legendaryBounce {
+      from { transform: scale(0.2); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .legendary-name {
+      font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem;
+      letter-spacing: 4px; color: #ffd966;
+      text-shadow: 0 0 40px #ffd96680;
+      margin: 10px 0 6px;
+    }
+    .legendary-price {
+      font-family: 'JetBrains Mono', monospace; font-size: 2rem;
+      color: #ffe9a0; font-weight: 700;
+    }
+    .legendary-tap {
+      margin-top: 28px; font-size: 0.8rem; letter-spacing: 3px;
+      color: #ffd96680; text-transform: uppercase;
+      animation: legendaryPulse 1.5s ease-in-out infinite;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -764,6 +901,16 @@
   </script>
 </head>
 <body>
+<!-- DEV-2: fallback при отключённом JS -->
+<noscript>
+  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0c10;font-family:sans-serif;text-align:center;padding:40px">
+    <div>
+      <div style="font-size:3rem;margin-bottom:16px">🎰</div>
+      <h2 style="color:#ffd966;font-size:1.5rem;margin-bottom:10px">JavaScript отключён</h2>
+      <p style="color:#7a8a9c">Для работы OpenCase необходим JavaScript.<br>Включите его в настройках браузера.</p>
+    </div>
+  </div>
+</noscript>
 <div class="confetti-container" id="confettiContainer"></div>
 
 <div class="case-app">
@@ -787,13 +934,13 @@
   </div>
 
   <div class="game-tabs" role="tablist" aria-label="Выбор игры">
-    <button class="tab-button active" data-game="case" role="tab" aria-selected="true" aria-controls="caseGame">📦 КЕЙС</button>
-    <button class="tab-button" data-game="slots" role="tab" aria-selected="false" aria-controls="slotsGame">🎰 СЛОТЫ</button>
-    <button class="tab-button" data-game="coin" role="tab" aria-selected="false" aria-controls="coinGame">🪙 ОРЁЛ/РЕШКА</button>
+    <button class="tab-button active" id="tab-case"  data-game="case"  role="tab" aria-selected="true"  aria-controls="caseGame">📦 КЕЙС</button>
+    <button class="tab-button"        id="tab-slots" data-game="slots" role="tab" aria-selected="false" aria-controls="slotsGame">🎰 СЛОТЫ</button>
+    <button class="tab-button"        id="tab-coin"  data-game="coin"  role="tab" aria-selected="false" aria-controls="coinGame">🪙 ОРЁЛ/РЕШКА</button>
   </div>
 
   <!-- CASE GAME (РАБОЧИЙ) -->
-  <div id="caseGame" class="game-container active">
+  <div id="caseGame" class="game-container active" role="tabpanel" aria-labelledby="tab-case" tabindex="0">
     <div class="roulette-outer">
       <div class="central-pointer"></div>
       <div class="roulette-wrapper">
@@ -815,7 +962,7 @@
   </div>
 
   <!-- ИСПРАВЛЕННЫЙ СЛОТ -->
-  <div id="slotsGame" class="game-container">
+  <div id="slotsGame" class="game-container" role="tabpanel" aria-labelledby="tab-slots" tabindex="0">
     <div class="slot-machine">
       
       <div class="slot-reels-container">
@@ -839,10 +986,22 @@
         </div>
       </div>
     </div>
+    <!-- GSN-3: таблица выплат слотов -->
+    <details class="payout-table">
+      <summary>📊 Таблица выплат</summary>
+      <div class="payout-grid">
+        <div class="payout-row"><span>7️⃣ 7️⃣ 7️⃣</span><span class="payout-mult">×10</span><span class="payout-label">ДЖЕКПОТ</span></div>
+        <div class="payout-row"><span>💎 💎 💎</span><span class="payout-mult">×8</span><span class="payout-label">БРИЛЛИАНТЫ</span></div>
+        <div class="payout-row"><span>👑 👑 👑</span><span class="payout-mult">×5</span><span class="payout-label">КОРОЛЬ</span></div>
+        <div class="payout-row"><span>🍒/🍋/🍊 ×3</span><span class="payout-mult">×3</span><span class="payout-label">СЕТ</span></div>
+        <div class="payout-row"><span>Любая пара</span><span class="payout-mult">×1.5</span><span class="payout-label">ПАРА</span></div>
+        <div class="payout-row payout-note"><span colspan="3">Тройник: 2.78% · Пара: 41.67% · Мимо: 55.56%</span></div>
+      </div>
+    </details>
   </div>
 
   <!-- ОРЁЛ И РЕШКА -->
-  <div id="coinGame" class="game-container">
+  <div id="coinGame" class="game-container" role="tabpanel" aria-labelledby="tab-coin" tabindex="0">
     <div class="coin-machine">
       <div class="coin-arena">
         <div class="coin-glow"></div>
@@ -877,6 +1036,10 @@
         </div>
       </div>
     </div>
+    <!-- GSN-3: шансы монеты -->
+    <div class="coin-odds-note">
+      📊 <b>Шансы:</b> победа — <b>38.5%</b> · поражение — 61.5% · выплата при победе <b>×2</b> ставки · RTP ≈ 77%
+    </div>
   </div>
 
   <!-- BOTTOM PANELS -->
@@ -897,7 +1060,11 @@
         <div class="stat-item"><span class="stat-label">Решка ₽</span><span class="stat-value" id="statTails">0</span></div>
         <div class="stat-item"><span class="stat-label">Потрачено</span><span class="stat-value stat-negative" id="totalSpent">0₽</span></div>
         <div class="stat-item"><span class="stat-label">Выиграно</span><span class="stat-value stat-positive" id="totalWon">0₽</span></div>
-        <div class="stat-item" style="grid-column:1/-1"><span class="stat-label">RTP (возврат)</span><span class="stat-value" id="rtpValue" style="color:var(--gold)">—</span></div>
+        <div class="stat-item" style="grid-column:1/-1"><span class="stat-label">RTP общий</span><span class="stat-value" id="rtpValue" style="color:var(--gold)">—</span></div>
+        <!-- GSN-5: per-game RTP -->
+        <div class="stat-item"><span class="stat-label">📦 Кейс RTP</span><span class="stat-value" id="caseRtpEl" style="color:var(--gold)">—</span></div>
+        <div class="stat-item"><span class="stat-label">🎰 Слоты RTP</span><span class="stat-value" id="slotsRtpEl" style="color:var(--gold)">—</span></div>
+        <div class="stat-item"><span class="stat-label">🪙 Монета RTP</span><span class="stat-value" id="coinRtpEl" style="color:var(--gold)">—</span></div>
       </div>
     </div>
 
@@ -955,6 +1122,7 @@
       '👑': 'КОРОЛЬ',
     },
     WIN_LABEL_DEFAULT: 'СЕТ',
+    WIN_LABEL_PAIR: 'ПАРА',   // GD-6 fix: вынесено из хендлера в конфиг
     DEFAULT_PAYOUT_TRIPLE: 3,
     PAIR_PAYOUT: 1.5,
     CONFETTI_WIN_THRESHOLD: 200,
@@ -964,7 +1132,7 @@
   // ========== КОНФИГ ОРЁЛ/РЕШКА ==========
   const COIN_CONFIG = {
     WIN_MULTIPLIER: 2,      // x2 к ставке при выигрыше
-    HOUSE_EDGE: 0.1,        // 10% в пользу казино
+    HOUSE_EDGE: 0.23,       // GSN-1 fix: 23% → RTP = (0.5-0.115)*2 = 77% ≈ RTP кейса/слотов
     FLIP_DURATION: 2000,    // мс анимации
     TICK_INTERVAL: 130,     // мс между тиками звука
     TICK_COUNT: 14,         // количество тиков при броске
@@ -1186,7 +1354,8 @@
       
       // Bug-fix: сохраняем shuffledSymbols в reelSymbolSequences чтобы spinReel мог
       // искать правильную позицию символа на ленте (а не в исходном неперемешанном массиве)
-      const shuffledSymbols = [...slotSymbols].sort(() => Math.random() - 0.5);
+      // DEV-1 fix: Fisher-Yates вместо biased sort — гарантирует равномерное распределение
+      const shuffledSymbols = shuffle([...slotSymbols]);
       reelSymbolSequences.push(shuffledSymbols);
 
       for (let i = 0; i < SLOT_CONFIG.TOTAL_SYMBOLS_PER_REEL; i++) {
@@ -1284,9 +1453,15 @@
   }
 
   spinSlotBtn.addEventListener('click', async () => {
-    if (isSlotSpinning) return; // Fix-4: двойной клик защищён флагом
+    if (isSlotSpinning) return;
     if (playerBalance < slotBet) {
       showNotification('❌ Недостаточно средств');
+      return;
+    }
+    // GD-2 fix: проверяем что казино может выплатить максимальный приз слотов
+    const maxSlotPayout = slotBet * Math.max(...Object.values(SLOT_CONFIG.PAYOUTS));
+    if (siteBalance < maxSlotPayout * 0.5) {
+      showNotification('🏦 Казино не в состоянии принять ставку');
       return;
     }
 
@@ -1323,7 +1498,7 @@
         gsap.fromTo(slotMachineEl, { scale: 1 }, { scale: 1.02, duration: 0.2, repeat: 3, yoyo: true });
       } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
         win = Math.round(slotBet * SLOT_CONFIG.PAIR_PAYOUT);
-        winType = 'ПАРА';
+        winType = SLOT_CONFIG.WIN_LABEL_PAIR;
         winLine.classList.remove('active');
         void winLine.offsetWidth;
         winLine.classList.add('active');
@@ -1412,6 +1587,12 @@
 
   flipCoinBtn.addEventListener('click', () => {
     if (coinFlipping) return;
+    // QA-1 fix: блокируем монету пока идёт спин кейса (isSpinning)
+    // чтобы предотвратить неожиданный параллельный расход баланса
+    if (isSpinning) {
+      showNotification('⏳ Дождись окончания спина кейса');
+      return;
+    }
     if (!playerChoice) {
       showNotification('⚠️ Сначала выбери орёл или решку!');
       return;
@@ -1470,6 +1651,15 @@
         chosenBtn.classList.add('result-loss');
         otherBtn.classList.add('result-win');
       }
+      // UX-3 fix: через 2.5 сек возвращаем кнопки в нейтральное состояние
+      // и восстанавливаем подсветку выбора игрока
+      setTimeout(() => {
+        chosenBtn.classList.remove('result-win', 'result-loss');
+        otherBtn.classList.remove('result-win', 'result-loss');
+        if (playerChoice) {
+          chosenBtn.classList.add('active');
+        }
+      }, 2500);
 
       if (win) {
         winAmount = coinBet * COIN_CONFIG.WIN_MULTIPLIER;
@@ -1573,21 +1763,30 @@
     }
   }
 
-  // Тики при вращении барабанов слотов
+  // GD-4 fix: тики синхронизированы с максимальной длительностью барабана (3.5 сек)
+  // Интервал постепенно увеличивается — имитирует замедление вращения
   let _slotTickTimer = null;
   function startSlotTicks() {
     if (!soundEnabled) return;
-    let tickCount = 0;
-    _slotTickTimer = setInterval(() => {
-      tickCount++;
-      // Ускорение в начале, замедление в конце
-      const freq = 300 + Math.random() * 100;
-      playTone(freq, 'triangle', 0.08, 0.06);
-      if (tickCount > 40) stopSlotTicks();
-    }, 80);
+    const totalDuration = Math.max(...SLOT_CONFIG.REEL_DURATIONS) * 1000; // 3500мс
+    const totalTicks = 38;
+    let tickIdx = 0;
+    function scheduleNext() {
+      if (tickIdx >= totalTicks) return;
+      const progress = tickIdx / totalTicks;
+      // Интервал от 50мс (быстро в начале) до 200мс (медленно в конце)
+      const interval = 50 + Math.round(150 * progress * progress);
+      _slotTickTimer = setTimeout(() => {
+        const freq = 350 - 80 * progress + Math.random() * 50;
+        playTone(freq, 'triangle', 0.08 - 0.03 * progress, 0.06);
+        tickIdx++;
+        scheduleNext();
+      }, interval);
+    }
+    scheduleNext();
   }
   function stopSlotTicks() {
-    clearInterval(_slotTickTimer);
+    clearTimeout(_slotTickTimer);
     _slotTickTimer = null;
   }
 
@@ -1613,6 +1812,28 @@
       confettiCont.appendChild(el);
       el.addEventListener('animationend', () => el.remove(), { once: true });
     }
+  }
+
+  // GSN-2: fullscreen wow-экран для легендарного дропа
+  function showLegendaryOverlay(item, onClose) {
+    const overlay = document.createElement('div');
+    overlay.className = 'legendary-overlay';
+    overlay.innerHTML = `
+      <div class="legendary-badge">✦ ЛЕГЕНДАРНЫЙ ДРО П ✦</div>
+      <div class="legendary-icon-big">${item.icon}</div>
+      <div class="legendary-name">${item.name}</div>
+      <div class="legendary-price">+${item.price}₽</div>
+      <div class="legendary-tap">нажмите чтобы продолжить</div>
+    `;
+    document.body.appendChild(overlay);
+    launchConfetti(120);
+    // Закрытие по клику или по таймауту 5 сек
+    const close = () => {
+      overlay.classList.add('leaving');
+      setTimeout(() => { overlay.remove(); onClose(); }, 500);
+    };
+    overlay.addEventListener('click', close, { once: true });
+    setTimeout(close, 5000);
   }
 
   // ========== UI HELPERS ==========
@@ -1688,6 +1909,23 @@
     div.addEventListener('animationend', () => div.remove());
   }
 
+  // CSN-1: порог авто-пополнения казино — если резерв опускается ниже, казино получает инвестиции
+  const CASINO_REFILL_THRESHOLD = 1000;
+  const CASINO_REFILL_AMOUNT    = 8000;
+
+  function checkCasinoRefill() {
+    if (siteBalance < CASINO_REFILL_THRESHOLD && !isSpinning && !isSlotSpinning && !coinFlipping) {
+      const prev = siteBalance;
+      siteBalance += CASINO_REFILL_AMOUNT;
+      animateCounter(siteSpan, prev, siteBalance, 1200);
+      _prevSite = siteBalance;
+      showNotification('🏦 Казино получило инвестиции!', 'success');
+      renderOdds();
+      renderPool();
+      writeSave();
+    }
+  }
+
   function updateBalances(animated = false) {
     if (animated) {
       const dPlayer = playerBalance - _prevPlayer;
@@ -1703,13 +1941,14 @@
     _prevPlayer = playerBalance;
     _prevSite   = siteBalance;
 
-    // Fix-13: если казино банкрот — все предметы заблокированы (w=0), кнопка КРУТИТЬ
-    // дизейблится, чтобы UI соответствовал тому, что показывают шансы (0% для всех).
-    // Не трогаем кнопку во время спина — там своя логика через setButtonLoading.
     if (!isSpinning) {
       const casinoBroke = siteBalance <= 0;
       spinBtn.disabled = casinoBroke;
       spinBtn.title = casinoBroke ? 'Казино банкрот — средств нет' : '';
+      // CSN-1: триггерим рефилл после каждого обновления баланса
+      if (siteBalance < CASINO_REFILL_THRESHOLD) {
+        setTimeout(checkCasinoRefill, 800);
+      }
     }
   }
 
@@ -1731,7 +1970,9 @@
       const cls = it.source === 'coin' ? (isWin ? 'win' : 'loss') : (isWin ? 'win' : 'neutral');
       const src = `<span class="src">${srcLabel[it.source] || '?'}</span>`;
       const priceStr = it.price > 0 ? `+${it.price}₽` : '—';
-      return `<div class="history-chip ${cls}">${it.icon}${src} ${priceStr}</div>`;
+      // GSN-4: для кейса показываем имя предмета в title атрибуте и коротко в чипе
+      const nameAttr = it.name ? ` title="${it.name}"` : '';
+      return `<div class="history-chip ${cls}"${nameAttr}>${it.icon}${src} ${priceStr}</div>`;
     }).join('');
   }
 
@@ -1754,16 +1995,17 @@
     totalWonEl.textContent = stats.totalWon + '₽';
     $('statEagle').textContent = stats.eagleWins || 0;
     $('statTails').textContent = stats.tailsWins || 0;
-    // BUG-06 fix: общий RTP + подсказка что он смешанный
     const rS = stats.totalSpent, rW = stats.totalWon;
     rtpEl.textContent = rtpStr(rS, rW);
     rtpEl.style.color = rtpColor(rS, rW);
-    // Per-game RTP tooltip
-    const parts = [];
-    if (stats.caseSpent)  parts.push(`📦 ${rtpStr(stats.caseSpent, stats.caseWon)}`);
-    if (stats.slotsSpent) parts.push(`🎰 ${rtpStr(stats.slotsSpent, stats.slotsWon)}`);
-    if (stats.coinSpent)  parts.push(`🪙 ${rtpStr(stats.coinSpent, stats.coinWon)}`);
-    rtpEl.title = parts.length ? parts.join(' / ') : '';
+    // GSN-5: per-game RTP — видимые строки, не только тултип
+    const cRtp = $('caseRtpEl'), sRtp = $('slotsRtpEl'), mRtp = $('coinRtpEl');
+    cRtp.textContent = rtpStr(stats.caseSpent,  stats.caseWon);
+    sRtp.textContent = rtpStr(stats.slotsSpent, stats.slotsWon);
+    mRtp.textContent = rtpStr(stats.coinSpent,  stats.coinWon);
+    cRtp.style.color = rtpColor(stats.caseSpent,  stats.caseWon);
+    sRtp.style.color = rtpColor(stats.slotsSpent, stats.slotsWon);
+    mRtp.style.color = rtpColor(stats.coinSpent,  stats.coinWon);
   }
 
   // ========== ЛЕНТА КЕЙСА ==========
@@ -1777,8 +2019,6 @@
   }
 
   function buildStrip() {
-    // Fix-11: частота появления предмета в ленте пропорциональна его весу редкости.
-    // Common-предметы мелькают чаще Legendary — лента правдива, а не вводит в заблуждение.
     const countByRarity = ITEMS.reduce((acc, it) => {
       acc[it.rarity] = (acc[it.rarity] || 0) + 1;
       return acc;
@@ -1789,7 +2029,7 @@
     }));
     const totalW = itemWeights.reduce((s, p) => s + p.w, 0);
 
-    const STRIP_LENGTH = CONFIG.STRIP_COPIES * 10; // 80 позиций, бесшовная периодика
+    const STRIP_LENGTH = CONFIG.STRIP_COPIES * 10;
     const result = [];
     for (let i = 0; i < STRIP_LENGTH; i++) {
       let r = Math.random() * totalW;
@@ -1800,6 +2040,17 @@
       }
       result.push({ ...picked, uid: `${i}-${Math.random().toString(36).slice(2, 8)}` });
     }
+
+    // QA-5 fix: гарантируем хотя бы 1 экземпляр каждого предмета в ленте.
+    // Вероятность что Legendary (вес ~2%) не попадёт в 80 позиций ≈ 20%.
+    // Заменяем случайную позицию на недостающий предмет.
+    ITEMS.forEach(item => {
+      if (!result.some(r => r.id === item.id)) {
+        const idx = Math.floor(Math.random() * result.length);
+        result[idx] = { ...item, uid: `guaranteed-${item.id}-${Math.random().toString(36).slice(2,8)}` };
+      }
+    });
+
     return shuffle(result);
   }
 
@@ -1964,7 +2215,12 @@
   }
 
   function spinRoulette() {
-    if (isSpinning || !itemWidth) return;
+    if (isSpinning) return;
+    if (!itemWidth) {
+      // QA-2 fix: информируем игрока вместо тихого возврата
+      showNotification('⚠️ Лента не загружена — попробуйте ещё раз');
+      return;
+    }
     if (playerBalance < CONFIG.SPIN_COST) {
       resultDiv.innerHTML = '😔 Недостаточно средств';
       return;
@@ -2074,7 +2330,20 @@
         renderOdds();
         renderPool();
         playWinSound(rarity);
-        if (isLegendary) launchConfetti(90);
+        if (isLegendary) {
+          // GSN-2: wow-момент — fullscreen оверлей, затем обычный финиш
+          showLegendaryOverlay(winItem, () => {
+            stats.totalSpins++;
+            renderStats();
+            writeSave();
+            isSpinning = false;
+            setButtonLoading(spinBtn, false);
+            currentAnim = null;
+            updateBalances();
+            _lastFinalX = finalTargetX;
+          });
+          return; // финиш будет вызван из оверлея
+        }
         else if (rarity === 'epic') launchConfetti(35);
       }
 
@@ -2084,7 +2353,9 @@
       isSpinning = false;
       setButtonLoading(spinBtn, false);
       currentAnim = null;
-      // Запоминаем финальную позицию — лента НЕ перестраивается до следующего спина
+      // GD-1 fix: updateBalances() ПОСЛЕ isSpinning=false — теперь casinoBroke проверяется
+      // корректно и кнопка дизейблится если казино банкрот после выплаты
+      updateBalances();
       _lastFinalX = finalTargetX;
     }
 
@@ -2122,45 +2393,39 @@
   });
 
   // ========== КАСТОМНЫЙ CONFIRM ==========
+  // DEV-5 fix: CSS-классы вместо inline styles — единая точка стилизации
   function showConfirmModal(message, onConfirm) {
     const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position:fixed;inset:0;background:rgba(0,0,0,0.75);
-      display:flex;align-items:center;justify-content:center;z-index:99999;
-      backdrop-filter:blur(6px);animation:gameFadeIn 0.2s ease-out;
-    `;
+    overlay.className = 'confirm-overlay';
     overlay.innerHTML = `
-      <div style="
-        background:#0f1215;border:1px solid #ffd96660;border-radius:24px;
-        padding:28px 32px;max-width:340px;width:90%;text-align:center;
-        box-shadow:0 30px 60px rgba(0,0,0,0.8);
-        animation:modalFadeIn 0.22s cubic-bezier(0.34,1.56,0.64,1) forwards;
-      ">
-        <div style="font-size:2rem;margin-bottom:12px">⚠️</div>
-        <div style="color:#e8edf4;font-size:1.1rem;font-weight:600;margin-bottom:20px">${message}</div>
-        <div style="display:flex;gap:10px;justify-content:center">
-          <button class="_confirmYes" style="
-            background:linear-gradient(150deg,#f7dc55,#d4a020);border:none;
-            color:#1a1505;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;
-            letter-spacing:2px;padding:10px 28px;border-radius:50px;cursor:pointer;
-          ">ДА</button>
-          <button class="_confirmNo" style="
-            background:#1a1f28;border:1px solid #2e3540;color:#7a8a9c;
-            font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;
-            padding:10px 28px;border-radius:50px;cursor:pointer;
-          ">ОТМЕНА</button>
+      <div class="confirm-box">
+        <div class="confirm-icon">⚠️</div>
+        <div class="confirm-message">${message}</div>
+        <div class="confirm-btns">
+          <button class="_confirmYes confirm-yes">ДА</button>
+          <button class="_confirmNo  confirm-no">ОТМЕНА</button>
         </div>
       </div>
     `;
     document.body.appendChild(overlay);
-    // BUG-18 fix: используем классы вместо id — нет конфликта при двойном вызове
     overlay.querySelector('._confirmYes').addEventListener('click', () => { overlay.remove(); onConfirm(); });
-    overlay.querySelector('._confirmNo').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('._confirmNo').addEventListener('click',  () => overlay.remove());
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   }
 
   resetBtn.addEventListener('click', () => {
     showConfirmModal('Сбросить весь прогресс?', () => {
+      // QA-3 fix: убиваем все активные анимации и сбрасываем флаги вращения
+      // чтобы кнопки не оставались залоченными после Reset во время анимации
+      if (currentAnim) { currentAnim.kill(); currentAnim = null; }
+      isSpinning    = false;
+      isSlotSpinning = false;
+      coinFlipping  = false;
+      setButtonLoading(spinBtn,     false);
+      setButtonLoading(spinSlotBtn, false);
+      setButtonLoading(flipCoinBtn, false);
+      stopSlotTicks();
+
       playerBalance = CONFIG.START_BALANCE;
       siteBalance = CONFIG.SITE_BALANCE;
       // Fix-5: включаем все per-game поля, чтобы RTP-тултип сбрасывался сразу
@@ -2204,7 +2469,9 @@
   // Дебаунс на resize
   let _resizeTimer = null;
   let _lastSymbolHeight = getSymbolHeight();
-  window.addEventListener('resize', () => {
+  // DEV-6 fix: orientationchange как отдельный триггер — на ряде мобильных устройств
+  // resize не стреляет при повороте экрана, поэтому слушаем оба события
+  function handleResize() {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(() => {
       if (!isSpinning) {
@@ -2219,7 +2486,6 @@
           }
           centerStrip();
         }
-        // BUG-14 fix: пересоздаём барабаны если размер символа изменился
         const newH = getSymbolHeight();
         if (newH !== _lastSymbolHeight) {
           _lastSymbolHeight = newH;
@@ -2227,6 +2493,11 @@
         }
       }
     }, 150);
+  }
+  window.addEventListener('resize', handleResize);
+  window.addEventListener('orientationchange', () => {
+    // После поворота дожидаемся завершения перерисовки браузером (200мс)
+    setTimeout(handleResize, 200);
   });
 
   // ========== ИНИЦИАЛИЗАЦИЯ ==========
@@ -2262,6 +2533,12 @@
       renderHistory();
     });
   }
+
+  // QA-4 fix: очищаем конфетти при уходе вкладки в фон — animationend не стреляет
+  // в фоновых вкладках, поэтому DOM-элементы накапливались до лимита 200
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) confettiCont.innerHTML = '';
+  });
 
   init();
 })();
